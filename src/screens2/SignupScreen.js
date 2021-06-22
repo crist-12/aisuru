@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, KeyboardAvoidingView, TouchableWithoutFeedback,Keyboard } from 'react-native'
 import styled from 'styled-components'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
@@ -137,7 +137,7 @@ const Register = () =>{
        /* dispatchLoaderAction({
           type: LOADING_START,
         }); */
-        SignUpRequest(email, password)
+        SignUpRequest(name, email, password)
           .then((res) => {
             if (!res.additionalUserInfo) {
             /*  dispatchLoaderAction({
@@ -168,13 +168,20 @@ const Register = () =>{
           /*  dispatchLoaderAction({
               type: LOADING_STOP,
             }); */
-            alert(err);
+          //  alert(err);
           });
       }
 
 }
 
     return (
+        <KeyboardAvoidingView 
+
+        style = {{flex: 1}}
+        keyboardVerticalOffset={-50}
+        behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Container>
             <Header>
                 <TextHeader>Crear una cuenta</TextHeader>
@@ -310,6 +317,8 @@ const Register = () =>{
                 </View>
             </Animatable.View>
         </Container>
+        </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     )
 }
 

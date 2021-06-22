@@ -58,10 +58,10 @@ const SplashScreen=({navigation})=>{
                     <Animatable.Image 
                     animation = "bounceIn"
                     duration = {1500}
-                    source= {require('../../assets/UNICAH_logo.png')}
-                    resizeMode = {"stretch"}
-                    height = {height_logo}
-                    width = {height_logo}
+                    source= {require('../../assets/5.png')}
+                    resizeMode = {"center"}
+                    height = {100}
+                    width = {100}
                     />
                 </Header>
                 <Animatable.View style={styles.footer} animation={"fadeInUpBig"}>

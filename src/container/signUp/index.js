@@ -108,7 +108,6 @@ export default ({ navigation }) => {
   };
   return (
     <KeyboardAvoidingView
-      keyboardVerticalOffset={keyboardVerticalOffset}
       behavior={Platform.OS == "ios" ? "padding" : "height"}
       style={[globalStyle.flex1, { backgroundColor: color.BLACK }]}
     >

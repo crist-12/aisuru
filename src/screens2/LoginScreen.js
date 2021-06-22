@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useContext} from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Platform, Keyboard } from 'react-native'
 import styled from 'styled-components'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
@@ -10,7 +10,9 @@ import AwesomeAlert from 'react-native-awesome-alerts';
 import { Store } from '../context/store'
 import { LOADING_START, LOADING_STOP } from '../context/actions/type'
 import { setAsyncStorage, keys } from '../asyncStorage'
-import { setUniqueValue } from '../utility/constants'
+import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
+
+import firebase from "../firebase/config";
 
 const Container = styled.View`
     flex:1;
@@ -144,7 +146,7 @@ const handleEye = () => {
 }
 
 useEffect(() => {
-  /*  const unsubscribe = auth.onAuthStateChanged(
+    const unsubscribe = firebase.auth().onAuthStateChanged(
         function(user){
             if(user){
                 navigation.replace('Home')
@@ -153,11 +155,17 @@ useEffect(() => {
             }
         }
     )
-    return unsubscribe; */
+    return unsubscribe; 
 }, [])
 
 
     return (
+    <KeyboardAvoidingView 
+        style = {{flex: 1}}
+        behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset = {keyboardVerticalOffset}
+    >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Container>
             <Header>
                 <TextHeader>¡Bienvenido, Christopher! :)</TextHeader>
@@ -175,6 +183,7 @@ useEffect(() => {
                 onCancelPressed={() => handleCancel()}
             />
             <Animatable.View animation={"fadeInUpBig"} style={styles.footer}>
+
                 <TextFooter>Email: </TextFooter>
                 <Action>
                     <FontAwesome                 
@@ -246,6 +255,8 @@ useEffect(() => {
                 </View>
             </Animatable.View>
         </Container>
+        </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     )
 }
 
