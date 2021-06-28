@@ -93,7 +93,8 @@ const signIn = () => {
         .then((res)=>{
             setAsyncStorage(keys.uuid, res.user.uid);
             setUniqueValue(res.user.uid);
-            navigation.replace("Home")
+           // navigation.replace("Home");
+           navigation.replace("myTabs",{screen: "Home"});
         })
         .catch((error)=>{
             var errorCode = error.code;
@@ -149,7 +150,7 @@ useEffect(() => {
     const unsubscribe = firebase.auth().onAuthStateChanged(
         function(user){
             if(user){
-                navigation.replace('Home')
+                navigation.replace("myTabs",{screen: "Home"});
             }else{
                
             }

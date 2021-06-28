@@ -4,7 +4,9 @@ const colores = {
     darkviolet: '#461C50',
     lightpurple: '#aa8caf',
     middlepurple: '#8e6995',
-    darkpurple: '#211224'
+    darkpurple: '#211224',
+    bigCircleColor: '#D8AFE7',
+    smallCircleColor: '#D3C3ED'
 }
 
 export default colores;

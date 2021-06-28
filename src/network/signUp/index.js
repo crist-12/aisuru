@@ -8,6 +8,17 @@ const SignUpRequest = (name, email, password) => {
      .then((response)=>{
       const uid = response.user.uid;
 
+      response.user.updateProfile({
+        displayName: name
+      })
+      .then(()=>{
+        console.log("Nombre actualizado")
+        console.log(response.user)
+      })
+      .catch(()=>{
+        alert("OCURRIO UN ERROR")
+      })
+
       const data = {
         id: uid,
         email,

@@ -73,7 +73,6 @@ const SplashScreen=({navigation})=>{
                         >
                             <LinearGradient 
                             colors={["#4C2882", "#4C2882"]}
-                         //   colors={["#D8AFE7", "#D3C3ED"]}
                             style={styles.login}
                             >
                                 <SignText>¡Empecemos!</SignText>

@@ -40,21 +40,6 @@ const [messages, setMessages] = useState([]);
   }, [])
 
 
-useLayoutEffect(()=>{
-    navigation.setOptions({
-        headerLeft: () => (
-            <View style={{marginLeft: 10}}>
-                <Avatar
-                rounded
-                source={{
-                    uri: auth?.currentUser?.photoURL
-                }}
-                />
-            </View>
-        )
-    })
-})
-
     return (
         <GiftedChat
         renderBubble={props => {
@@ -84,11 +69,11 @@ useLayoutEffect(()=>{
             messages={messages}
             showAvatarForEveryMessage = {true}
             onSend={messages => onSend(messages)}
-            user={{
+        /*    user={{
                 _id: auth.currentUser?.email,
                 name : auth.currentUser?.displayName,
                 avatar: auth.currentUser?.photoURL
-            }}
+            }} */
         />
     )
 }
