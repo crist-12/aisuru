@@ -228,6 +228,7 @@ const handleParejas = async() => {
 }
 
 const searchPareja = () => {
+    
     setBanderita(true);
     if(search){
     setSearching(true);
@@ -304,6 +305,17 @@ if(searchObject){
     .catch(()=>{
         console.log("Hubo un error al setear pareja 2");
     });
+
+    let chatdata = {
+        _id : data._id,
+    }
+    const chatRef = firebase.firestore().collection("chats");
+    chatRef
+    .add({
+        _id : chatdata._id
+    })
+    .then(()=>{console.log("Sala de chat creada exitosamente")})
+    .catch(()=>{console.log("Algo salió mal al crear la sala de chat")})
 }
 }
 
@@ -385,6 +397,7 @@ const signOut = () => {
                                             
                                                 <View style={{flex: 1, marginBottom: 15}}>
                                                 <TextoInferior>¡Bienvenido a Aisuru!</TextoInferior>
+                                                <TouchableOpacity onPress={signOut}><Text>SignOut</Text></TouchableOpacity>
                                                 <Text style={{marginTop: 15}}>Aisuru es más divertido con tu pareja</Text>
                                                 <Text style={{marginTop: 10, color: 'gray'}}>¡Comencemos esta aventura!</Text>
                                                 </View>
@@ -455,7 +468,7 @@ const signOut = () => {
                                                 <Text style={{margin: 10, fontWeight: 'bold'}}>Iniciaron el: {date.getDate()}/{date.getMonth()+1}/{date.getFullYear()}</Text>
                                                 </View>
                                             </ProgressStep>
-                                            <ProgressStep label="Paso 4" previousBtnText="Regresar" finishBtnText="Finalizar">
+                                            <ProgressStep label="Paso 4" previousBtnText="Regresar" finishBtnText="Finalizar" onSubmit={createParejas}>
                                                 <View style={{ alignItems: 'center' }}>
                                                 <TextoInferior>Ya casi terminamos</TextoInferior>
                                                 <Text style={{margin: 10}}>Confirma que los datos son los correctos</Text>
