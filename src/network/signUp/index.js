@@ -23,6 +23,7 @@ const SignUpRequest = (name, email, password) => {
         id: uid,
         email,
         name,
+        status: false,
       };
 
       const usersRef = firebase.firestore().collection("users");

@@ -1,16 +1,15 @@
-import React, {useEffect, useLayoutEffect, useState} from 'react'
-import { View, Text, Button, ImageBackground, StyleSheet, Image, TouchableOpacity} from 'react-native'
+import React, {useEffect, useLayoutEffect, useState, LogBox} from 'react'
+import { View, Text, Button, ImageBackground, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from 'react-native'
 import styled from 'styled-components'
-import  AntDesign  from 'react-native-vector-icons';
-import SimpleLineIcons from "react-native-vector-icons/SimpleLineIcons";
 import firebase from "../firebase/config";
 import LottieView from 'lottie-react-native'
 import { Dimensions } from 'react-native';
-import { black } from 'color-name';
 import colores from '../utility/colors/colores'
-import AwesomeAlert from 'react-native-awesome-alerts';
+import {MaterialIcons} from 'react-native-vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {setIdPareja, getIdPareja} from '../../data_store'
+import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
+import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
 
 
 const Container = styled.View`
@@ -98,14 +97,14 @@ const SignUpText = styled.Text`
 `
 
 const BottomView = styled.View`
-    flex: 3;
+    flex: 1;
     padding: 15px;
 `
 
 const HomeScreen=({navigation})=> {
 
 let arrayParejas = [];
-let [searchObject, setSearchObject]=useState('');
+let [searchObject, setSearchObject]=useState(null);
 const [userSearch, setUserSearch]=useState('');
 const [flag, setFlag] = useState(false);
 const [loading, setLoading] = useState(true);
@@ -115,22 +114,36 @@ const [search, setSearch] = useState('');
 const [date, setDate] = useState(new Date(1598051730000));
 const [mode, setMode] = useState('date');
 const [show, setShow] = useState(false);
-
-
-let windowWidth = Dimensions.get('window').width;
-let windowHeight = Dimensions.get('window').height;
-
+const [status, setStatus] = useState(null);
+const [statusSearch, setStatusSearch] = useState(null);
+const [banderita, setBanderita] = useState(false);
 
 
 useEffect(()=>{
   setLoading(true);
-  handleParejas();
-  setTimeout(handleParejas,1000);
-  setTimeout(handleParejas,1000);
+  //handleParejas();
+  //setTimeout(handleParejas,1000);
+  getStatusUser();
+  setTimeout(getStatusUser,1000);
+  //setTimeout(handleParejas,1000);
   setLoading(false);
 },[navigation])
 
-//console.log(firebase.auth().currentUser)
+
+const getStatusUser = () =>{
+    var status;
+    const id = firebase.auth().currentUser.uid;
+    return firebase.firestore().collection('users').where('id','==',id).onSnapshot((querySnapShot) => {
+        querySnapShot.forEach(doc => {
+          //  console.log(doc.data());
+            status = doc.data().status;
+            setStatus(doc.data().status);
+        })
+    })
+}
+getStatusUser();
+console.log("El estatus de pareja es: "+status);
+console.log("El estatus de searchObject es: "+searchObject);
 
 
 const onChange = (event, selectedDate) => {
@@ -209,14 +222,13 @@ const handleParejas = async() => {
 
 
     arrayParejas.map(element=>{
-        console.log(element);
+     //   console.log(element);
         setIdPareja(element._id);
     })  
 }
 
-//console.log("My Id de pareja es: "+getIdPareja())
-
 const searchPareja = () => {
+    setBanderita(true);
     if(search){
     setSearching(true);
     firebase.firestore().collection('users').where('email','==',search).onSnapshot((querySnapShot) => {
@@ -224,6 +236,7 @@ const searchPareja = () => {
 
             setUserSearch(doc.data().name);
             setSearchObject(doc.data().id);
+            setStatusSearch(doc.data().status);
             //console.log(doc.data().name);
         })
     }
@@ -241,8 +254,16 @@ const searchPareja = () => {
 }
 
 const createParejas = () =>{
-handleParejas();
-if(arrayParejas.length==0){
+
+if(!searchObject){
+    alert("Primero debes buscar el registro de tu pareja");
+    return;
+}
+if(statusSearch){
+    alert("El usuario que quieres registrar ya tiene pareja");
+    return;
+}
+
 if(searchObject){
     let data = {
         _id : firebase.auth().currentUser.uid + Math.random(),
@@ -261,14 +282,31 @@ if(searchObject){
         handleParejas();
         setUser(firebase.auth().currentUser.displayName);
     })
-    
-}else{
-    alert("Debes buscar primero el email de tu pareja");
+
+    const usRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
+    usRef.update({
+        "status" : true
+    })
+    .then(()=>{
+        console.log("Usuario en pareja");
+    })
+    .catch(()=>{
+        console.log("Hubo un error al setear pareja");
+    });
+
+    const usRef2 = firebase.firestore().collection("users").doc(searchObject);
+    usRef2.update({
+        "status" : true
+    })
+    .then(()=>{
+        console.log("Usuario en pareja 2");
+    })
+    .catch(()=>{
+        console.log("Hubo un error al setear pareja 2");
+    });
 }
-}else{
-    alert("Ya estás en una relación");
 }
-}
+
 
 const signOut = () => {
     firebase.auth().signOut().then(()=>{
@@ -278,10 +316,13 @@ const signOut = () => {
     });
 }
 
-console.log(getIdPareja())
     return (
-
-
+        <KeyboardAvoidingView 
+        style = {{flex: 1}}
+        behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset = {keyboardVerticalOffset}
+    >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Container>
             {
                 loading?
@@ -299,7 +340,7 @@ console.log(getIdPareja())
             
                     <View style={{flex: 1}}>
                         {
-                            flag?
+                            status?
                             <SecondaryContainer>
                                 <TrueView>
                                     <TextView>
@@ -328,8 +369,127 @@ console.log(getIdPareja())
                             </SecondaryContainer>
                             :
                            <SecondaryContainer>
-                               <TrueView>
-                                  <View style={styles.cardView}>
+                               <TrueView>     
+                                   <View style={[{flex: 1}, styles.prueba]}>
+                                   <LottieView
+                                                    style = {{flex:1}}
+                                                    source = {require('../lottie/sleepy-cat.json')}
+                                                    autoPlay = {true}
+                                                    loop = {true}/>
+                                        </View>
+                                    
+                                    <View style={styles.cardView}>
+                                        <ProgressSteps>
+                                            <ProgressStep label="Paso 1" nextBtnText="¡Adelante!">
+                                            <View style={{alignItems: 'center', flex:1}}>
+                                            
+                                                <View style={{flex: 1, marginBottom: 15}}>
+                                                <TextoInferior>¡Bienvenido a Aisuru!</TextoInferior>
+                                                <Text style={{marginTop: 15}}>Aisuru es más divertido con tu pareja</Text>
+                                                <Text style={{marginTop: 10, color: 'gray'}}>¡Comencemos esta aventura!</Text>
+                                                </View>
+                                            </View>
+
+                                            </ProgressStep>
+                                            <ProgressStep label="Paso 2" nextBtnText="¡Adelante!" previousBtnText="Regresar" nextBtnDisabled={!(searchObject && !statusSearch)}>
+                                                <View style={{ alignItems: 'center' }}>
+                                                <TextoInferior>¡Búsqueda de tu pareja!</TextoInferior>
+                                                <Action>
+                                                <InputEmail
+                                                    placeholder = "Escribe el correo de tu pareja"
+                                                    value = {search}
+                                                    onChangeText = {(search) => setSearch(search)}
+                                             />
+                                             </Action>
+                                             <TouchableOpacity
+                                                onPress={searchPareja}
+                                                style = {[styles.login, {
+                                                    borderColor: colores.lightpurple,  
+                                                    borderWidth: 1,
+                                                    marginTop: 15
+                                                }]}>
+                                            <SignUpText>Buscar</SignUpText>
+                                            </TouchableOpacity>
+                                            <>
+                                            {
+                                                !banderita?<></>:
+                                            <>
+                                            {!statusSearch?
+                                                <>
+                                                <Text style={{marginTop: 15, fontWeight: 'bold'}}>La persona está <Text style={{color: "green"}}>disponible</Text></Text>
+                                                </>:
+                                                <>
+                                                <Text style={{marginTop: 15, fontWeight: 'bold'}}>La persona está <Text style={{color: "red"}}>en una relación ya</Text></Text>
+                                                </>
+                                            }
+                                            </>
+                                                }
+                                            </>
+                                                </View>
+                                            </ProgressStep>
+                                            <ProgressStep label="Paso 3" nextBtnText="¡Adelante!" previousBtnText="Regresar">
+                                                <View style={{ alignItems: 'center' }}>
+                                                <TextoInferior>Fecha de Aniversario</TextoInferior>
+                                                <Text style={{margin: 10}}>Selecciona en qué fecha inició tu relación</Text>
+                                                <TouchableOpacity
+                                                onPress={()=>{setShow(true)}}
+                                                style = {[styles.login, {
+                                                    borderColor: colores.lightpurple,  
+                                                    borderWidth: 1,
+                                                    marginTop: 15
+                                                }]}>
+                                            <SignUpText>Seleccionar Fecha</SignUpText>
+                                            </TouchableOpacity>
+                                            {
+                                                    show?
+                                                    <DateTimePicker
+                                                    testID="dateTimePicker"
+                                                    value={date}
+                                                    mode={mode}
+                                                    is24Hour={true}
+                                                    display="default"
+                                                    onChange={onChange}
+                                                    />:
+                                                    null
+                                                }
+                                                <Text style={{margin: 10, fontWeight: 'bold'}}>Iniciaron el: {date.getDate()}/{date.getMonth()+1}/{date.getFullYear()}</Text>
+                                                </View>
+                                            </ProgressStep>
+                                            <ProgressStep label="Paso 4" previousBtnText="Regresar" finishBtnText="Finalizar">
+                                                <View style={{ alignItems: 'center' }}>
+                                                <TextoInferior>Ya casi terminamos</TextoInferior>
+                                                <Text style={{margin: 10}}>Confirma que los datos son los correctos</Text>
+                                                <Text style={{fontWeight: 'bold'}}>Nombre de tu pareja: <Text style={{fontWeight: 'normal'}}>{search}</Text></Text>
+                                                <Text style={{fontWeight: 'bold'}}>Email de tu pareja: <Text style={{fontWeight: 'normal'}}>{userSearch}</Text></Text>
+                                                <Text style={{fontWeight: 'bold'}}>Su relación inició un <Text style={{fontWeight: 'normal'}}>{date.getDate()}/{date.getMonth()+1}/{date.getFullYear()}</Text></Text>
+                                                </View>
+                                            </ProgressStep>
+                                        </ProgressSteps>
+                                    </View>
+                               </TrueView>
+                            </SecondaryContainer>
+                        }
+                    </View>
+    </ImageBackground>
+    }
+        </Container>
+        </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+    )
+}
+
+
+/* 
+<Image 
+                                                                source = {require('../../assets/4.png')}
+                                                                width = {30}
+                                                                height = {30}
+                                                                style = {{alignItems: 'center', justifyContent: 'center'}}
+                                                                resizeMode = {"center"}
+                                                            />
+
+
+<View style={styles.cardView}>
                                       <View style={{flex: 1}}>
                                           <SupView>
                                       <TextoInferior>Agrega a tu pareja</TextoInferior>
@@ -342,14 +502,42 @@ console.log(getIdPareja())
                                              value = {search}
                                              onChangeText = {(search) => setSearch(search)}
                                              />
+                                             <View style={{alignItems: 'center'}}>
+                                              <TouchableOpacity
+                                                      onPress = {searchPareja}
+                                                   // onPress = {signOut}
+                                                        style = { {
+                                                            borderColor: colores.lightpurple,  
+                                                            borderWidth: 1,
+                                                         //   marginTop: 15,
+                                                            backgroundColor: colores.lightpurple,
+                                                           // borderRadius: ""
+                                                           width: 30,
+                                                           height: 30,
+                                                           borderRadius: 15
+                                                        }}>
+                                                            <MaterialIcons
+                                                            name = "person-search"
+                                                            size = {22}
+                                                            />
+                                            </TouchableOpacity>
+                                            </View>
                                              </Action>
                                         <View>
-                                            {searching?
-                                            <Text>Buscando registros...</Text>
+                                            {!banderita?
+                                            <Text>La persona está <Text>Aqui</Text></Text>
                                             :
                                             <View style={{padding: 15}}>  
                                                 <Text>Email: {search}</Text>
                                                 <Text>Nombre : {userSearch}</Text>
+                                                {!statusSearch?
+                                                <>
+                                                <Text>La persona está <Text style={{color: "green"}}>disponible</Text></Text>
+                                                </>:
+                                                <>
+                                                <Text>La persona está <Text style={{color: "red"}}>en una relación ya</Text></Text>
+                                                </>
+                                                }
                                                 <Text>Fecha de inicio de relación: </Text>
                                                 <TouchableOpacity style={{backgroundColor: "#fff"}} onPress={()=>{setShow(true)}}>
                                                 <Text style={{color: "blue", textDecorationLine: 'underline'}}>Definir fecha</Text>
@@ -373,17 +561,8 @@ console.log(getIdPareja())
                                         </View>
                                         
                                          </MiddleView>
-                                         <BottomView>
+                                         <BottomView >
                                          <View style={styles.button}>
-                                         <TouchableOpacity
-                                                        onPress = {searchPareja}
-                                                        style = {[styles.login, {
-                                                            borderColor: colores.lightpurple,  
-                                                            borderWidth: 1,
-                                                            marginTop: 15
-                                                        }]}>
-                                                            <SignUpText>Buscar pareja</SignUpText>
-                                            </TouchableOpacity>
                                             <TouchableOpacity
                                                         onPress = {createParejas}
                                                         style = {[styles.login, {
@@ -392,26 +571,12 @@ console.log(getIdPareja())
                                                             marginTop: 15
                                                         }]}>
                                                             <SignUpText>Registrar pareja</SignUpText>
+
                                             </TouchableOpacity>
                                     </View>
                                     </BottomView>
                                       </View>  
-                                  </View>
-                               </TrueView>
-                            </SecondaryContainer>
-                        }
-                    </View>
-    </ImageBackground>
-    }
-        </Container>
-    )
-}
-
-
-/*<Text>HomeScreen</Text>
-            <Button title= "SignOut" onPress={()=>signOut()}></Button>
-            <Button title= "Chat" onPress={()=>navigation.navigate('Chat')}></Button>
-            <Button title= "Get Todo" onPress={()=>handleParejas()}></Button> */
+                                  </View> */
 
 
 export default HomeScreen;
@@ -437,8 +602,12 @@ const styles = StyleSheet.create({
     cardView: {
         width: Dimensions.get('window').width*0.9,
         height: Dimensions.get('window').height*0.65,
-        borderRadius: 20,
-        backgroundColor : '#fff'
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        backgroundColor : '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1.7
     },
     login: {
         width: "100%",
@@ -446,5 +615,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10
+    },
+    progressCard : {
+        width : "100%",
+        height : "100%",
+        backgroundColor : 'gray',
+        flex: 1
+    },
+    prueba: {
+        width: Dimensions.get('window').width*0.9,
+        height: Dimensions.get('window').height*0.65,
+        backgroundColor: 'white'
     }
 })
