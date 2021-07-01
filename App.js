@@ -39,10 +39,19 @@ export default function App() {
 
 
   function myTabs(){
+    const getTabVisibility = (route) =>{
+      const routeName = route.state ? route.state.routes[route.state.index].name : '';
+
+      if( routeName == "Chat"){
+        return false;
+      }else{
+        return true;
+      }
+    }
     return(
       <Tab.Navigator tabBarOptions={{activeTintColor: colores.darkviolet}}>
          <Tab.Screen name="Perfil" component={ProfileScreen} options={{tabBarIcon:({color,size})=>(<Ionicons name="person" size={18} color={colores.darkviolet} />)}}/> 
-         <Tab.Screen name="Chat" component={ChatScreen} options={{tabBarIcon:({color,size})=>(<Ionicons name="chatbubble-ellipses" size={18} color={colores.darkviolet} />)}}/> 
+         <Tab.Screen name="Chat" component={ChatScreen} options={{headerShown: true, tabBarVisible:false, tabBarIcon:({color,size})=>(<Ionicons name="chatbubble-ellipses" size={18} color={colores.darkviolet} />)}}/> 
           <Tab.Screen name="Home" component={HomeScreen} options={{tabBarIcon:({color,size})=>(<Ionicons name="home" size={18} color={colores.darkviolet} />)}} /> 
           <Tab.Screen name="Event" component={EventScreen} options={{tabBarIcon:({color,size})=>(<MaterialCommunityIcons name="party-popper" size={18} color={colores.darkviolet} />)}}/> 
           <Tab.Screen name="Acerca" component={AboutScreen} options={{tabBarIcon:({color,size})=>(<Ionicons name="information" size={18} color={colores.darkviolet} />)}}/> 
