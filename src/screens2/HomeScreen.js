@@ -1,7 +1,7 @@
 import React, {useEffect, useLayoutEffect, useState, LogBox} from 'react'
 import { View, Text, Button, ImageBackground, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from 'react-native'
 import styled from 'styled-components'
-import firebase from "../firebase/config";
+import firebase from "../firebase/config"
 import LottieView from 'lottie-react-native'
 import { Dimensions } from 'react-native';
 import colores from '../utility/colors/colores'
@@ -121,12 +121,13 @@ const [banderita, setBanderita] = useState(false);
 
 useEffect(()=>{
   setLoading(true);
-  //handleParejas();
+  handleParejas();
   //setTimeout(handleParejas,1000);
   getStatusUser();
   setTimeout(getStatusUser,1000);
   //setTimeout(handleParejas,1000);
   setLoading(false);
+
 },[navigation])
 
 
@@ -192,6 +193,8 @@ const qryA = async(id) =>{
   firebase.firestore().collection('parejas').where('iduser1','==',id).onSnapshot((querySnapShot) => {
         querySnapShot.forEach(doc => {
             arrayParejas.push(doc.data());
+            console.log(doc.data());
+            setIdPareja(doc.data()._id);
         })
     }
     )
@@ -201,6 +204,8 @@ const qryB = async(id)=>{
     firebase.firestore().collection('parejas').where('iduser2','==',id).onSnapshot((querySnapShot) => {
         querySnapShot.forEach(doc => {
             arrayParejas.push(doc.data());
+            console.log(doc.data());
+            setIdPareja(doc.data()._id);
         })
     }
     )
@@ -219,12 +224,11 @@ const handleParejas = async() => {
     }else{
         setFlag(true);
     }
-
-
     arrayParejas.map(element=>{
-     //   console.log(element);
+        console.log(element);
         setIdPareja(element._id);
     })  
+    console.log("GETPAREJA: "+getIdPareja())
 }
 
 const searchPareja = () => {
@@ -267,7 +271,7 @@ if(statusSearch){
 
 if(searchObject){
     let data = {
-        _id : firebase.auth().currentUser.uid + Math.random(),
+        _id : firebase.auth().currentUser.uid + (Math.random()*(99999-1)+1),
         iduser1 : firebase.auth().currentUser.uid,
         iduser2 : searchObject,
         date : date,
@@ -275,7 +279,7 @@ if(searchObject){
     }
     const usersRef = firebase.firestore().collection("parejas");
     usersRef
-    .doc()
+    .doc(data._id.toString())
     .set(data)
     .then(() => {
         console.log("Usuario creado :)");
@@ -309,14 +313,29 @@ if(searchObject){
     let chatdata = {
         _id : data._id,
     }
-    const chatRef = firebase.firestore().collection("chats");
-    chatRef
-    .add({
-        _id : chatdata._id
-    })
-    .then(()=>{console.log("Sala de chat creada exitosamente")})
-    .catch(()=>{console.log("Algo salió mal al crear la sala de chat")})
+    
+    createChatRoom(data._id);
+    setIdPareja(data._id);
 }
+}
+
+const createChatRoom = (_id) =>{
+  /*  await firebase.firestore().collection("chats").add({
+        chatId: _id
+    }).then(()=>{
+        console.log("Sala de chat con id "+_id.toString()+" creada correctamente");
+    }).catch((error)=>{
+        console.log(error);
+    }) */
+    var chatRef = firebase.firestore().collection("chats").doc(_id).collection("mensajes").doc()
+    
+    chatRef.set({
+        chatId: _id
+    }).then(()=>{
+        console.log("Yupi")
+    }).catch((error)=>{
+        console.log(error);
+    })
 }
 
 

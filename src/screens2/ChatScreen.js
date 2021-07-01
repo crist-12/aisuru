@@ -1,27 +1,54 @@
 import React, { useLayoutEffect, useEffect, useState, useCallback } from 'react'
 import { View, Text } from 'react-native'
 import { Avatar } from 'react-native-elements' 
-
+import firebase from "../firebase/config"
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { getIdPareja, setIdPareja } from "../../data_store";
 
 
 const ChatScreen = ({navigation}) => {
 
 const [messages, setMessages] = useState([]);
+const [id, setId] = useState(null);
+
+
+  useEffect(()=>{
+      console.log("El id de chat es: "+getIdPareja())
+      setId(getIdPareja());
+  },[])
+
 
   useLayoutEffect(()=>{
-     const unsubscribe = db.collection('chats').orderBy('createdAt','desc').onSnapshot(
-          snapshot => setMessages(
-              snapshot.docs.map(doc=>({
-                _id : doc.data()._id,
-                createdAt : doc.data().createdAt.toDate(),
-                text : doc.data().text,
-                user : doc.data().user
-              }))
-          )
+    let objArray = {
+      _id : "",
+      createdAt : "",
+      text : "",
+      user : {}
+    }
+    let msgObject = []
+    const unsubscribe = firebase.firestore().collection("chats").doc(getIdPareja()).collection("mensajes").orderBy('createdAt','desc')
+    .onSnapshot((snap)=> setMessages(
+      snap.docs.map(doc =>({
+        _id : doc.data()._id,
+        createdAt : doc.data().createdAt,
+        text : doc.data().text,
+        user : doc.data().user
+       // msgObject.push(objArray);
+        //console.log(messages);
+        //console.log(msgObject);
+       // console.log(objArray);
+        //msgObject.push(objArray);
+        //setMessages(msgObject);
+      }))
       )
-      return unsubscribe;
+    )
+    
+  //  setMessages(msgObject);
+    
+    return unsubscribe;
   },[])
+
+
 
   const onSend = useCallback((messages = []) => {
     setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
@@ -31,16 +58,28 @@ const [messages, setMessages] = useState([]);
         text,
         user
     }=messages[0];
-    db.collection('chats').add({
-        _id,
-        createdAt,
-        text,
-        user
-    })
+
+      var chatRef = firebase.firestore().collection("chats").doc(id).collection("mensajes");
+        chatRef
+        .doc((Math.random()*(999999-1)+1).toString())
+        .set({
+          _id,
+          createdAt,
+          text,
+          user
+        })
+        .then(()=>{
+          console.log("Mensaje enviado :)");
+        })
+        .catch((error)=>{
+          console.log("Pasó algo malo :(");
+        })
+
   }, [])
 
 
     return (
+      
         <GiftedChat
         renderBubble={props => {
             return (
@@ -69,11 +108,10 @@ const [messages, setMessages] = useState([]);
             messages={messages}
             showAvatarForEveryMessage = {true}
             onSend={messages => onSend(messages)}
-        /*    user={{
-                _id: auth.currentUser?.email,
-                name : auth.currentUser?.displayName,
-                avatar: auth.currentUser?.photoURL
-            }} */
+            user={{
+                _id: firebase.auth().currentUser?.email,
+                name : firebase.auth().currentUser?.displayName
+            }}
         />
     )
 }
