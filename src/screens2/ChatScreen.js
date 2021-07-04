@@ -7,12 +7,23 @@ import { getIdPareja, setIdPareja } from "../../data_store";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import AntDesign from 'react-native-vector-icons/AntDesign'
+import Feather from 'react-native-vector-icons/Feather'
 import colores from '../utility/colors/colores'
+import ImgToBase64 from 'react-native-image-base64'
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ImagePicker from 'react-native-image-picker';
+import * as Permissions from 'expo-permissions';
+import CircleButton from 'react-native-circle-floatmenu';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const ChatScreen = ({navigation}) => {
 
 const [messages, setMessages] = useState([]);
 const [id, setId] = useState(getIdPareja());
+const [image, setImage] = useState(null);
+const [uploading, setUploading] = useState(false);
+const [transferred, setTransferred] = useState(0);
 
 
   useEffect(()=>{
@@ -52,6 +63,75 @@ const [id, setId] = useState(getIdPareja());
     return unsubscribe;
   },[])
 
+
+  const askForPermission = async () => {
+    const permissionResult = 
+    await Permissions.askAsync(Permissions.CAMERA)
+    if (permissionResult.status !== 'granted') {
+      Alert.alert('no permissions to access camera!', 
+      [{ text: 'ok'}])
+      return false
+    }
+    return true
+  }
+
+const uploadImage = async () => {
+// make sure that we have the permission
+const hasPermission = await askForPermission()
+if (!hasPermission) {
+  return
+} else {
+  // launch the camera with the following settings
+  let result = await ImagePicker.launchImageLibrary({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [3, 3],
+    quality: 1,
+    base64: true,
+  })
+  // make sure a image was taken:
+  if (!result.cancelled) {
+    console.log(result.uri);
+   // setImage(result.uri);
+  }
+}
+}
+
+const takeImage = async () => {
+  // make sure that we have the permission
+  const hasPermission = await askForPermission()
+  if (!hasPermission) {
+    return
+  } else {
+    // launch the camera with the following settings
+    let result = await ImagePicker.launchImageLibrary({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [3, 3],
+      quality: 1,
+      base64: true,
+    })
+    // make sure a image was taken:
+    if (!result.cancelled) {
+      uploadImage(result.uri)
+      .then(()=>{
+        alert("Exito")
+      })
+      .catch((error)=>{
+        alert(error);
+      })
+    }
+  }
+}
+
+const photo = (props) =>{
+return(
+      <TouchableOpacity style={{margin: 10}} onPress={uploadImage}>
+        <Feather name="camera" size={22} color={colores.darkviolet}/>
+      </TouchableOpacity>
+)
+}
+
   const scrollToBottomComponent = (props) => {
     return (
       <FontAwesome
@@ -79,6 +159,11 @@ const [id, setId] = useState(getIdPareja());
 
 
   const onSend = useCallback((messages = []) => {
+
+
+
+
+
     setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
     const {
         _id,
@@ -162,6 +247,7 @@ const [id, setId] = useState(getIdPareja());
             renderSend ={renderSend}
             scrollToBottom = {true}
             scrollToBottomComponent = {scrollToBottomComponent}
+            renderActions = {photo}
         />
         </ImageBackground>
     )
