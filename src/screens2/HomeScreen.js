@@ -7,7 +7,7 @@ import { Dimensions } from 'react-native';
 import colores from '../utility/colors/colores'
 import {MaterialIcons} from 'react-native-vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {setIdPareja, getIdPareja} from '../../data_store'
+import {setIdPareja, getIdPareja, setCoupleObject, setUserCod, setDateData} from '../../data_store'
 import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
 import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
 
@@ -194,7 +194,10 @@ const qryA = async(id) =>{
         querySnapShot.forEach(doc => {
             arrayParejas.push(doc.data());
             console.log(doc.data());
+         //   setCoupleObject(doc.data());
             setIdPareja(doc.data()._id);
+            setUserCod(doc.data().iduser2);
+            setDateData(doc.data().date.seconds);
         })
     }
     )
@@ -205,7 +208,10 @@ const qryB = async(id)=>{
         querySnapShot.forEach(doc => {
             arrayParejas.push(doc.data());
             console.log(doc.data());
+         //   setCoupleObject(doc.data());
             setIdPareja(doc.data()._id);
+            setUserCod(doc.data().iduser1);
+            setDate(doc.data().date.seconds);
         })
     }
     )
