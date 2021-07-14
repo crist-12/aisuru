@@ -143,8 +143,7 @@ const getStatusUser = () =>{
     })
 }
 getStatusUser();
-console.log("El estatus de pareja es: "+status);
-console.log("El estatus de searchObject es: "+searchObject);
+
 
 
 const onChange = (event, selectedDate) => {
@@ -167,27 +166,6 @@ const onChange = (event, selectedDate) => {
   };
 
 
-const getTodo = () => {
-    const id = firebase.auth().currentUser.uid;
-    firebase.firestore().collection('parejas').where('iduser1','==',id).onSnapshot((querySnapShot) => {
-        querySnapShot.forEach(doc => {
-            arrayParejas.push(doc.data());
-        })
-    }
-    )
-
-    arrayParejas.map(element=>{
-        console.log(element);
-    })
-
-
-  /*  firebase.database().ref('users').on('value', (dataSnapshot)=>{
-        dataSnapshot.forEach(doc =>{
-            console.log(doc.val());
-        })
-    }) */
-
-}
 
 const qryA = async(id) =>{
   firebase.firestore().collection('parejas').where('iduser1','==',id).onSnapshot((querySnapShot) => {
@@ -211,7 +189,7 @@ const qryB = async(id)=>{
          //   setCoupleObject(doc.data());
             setIdPareja(doc.data()._id);
             setUserCod(doc.data().iduser1);
-            setDate(doc.data().date.seconds);
+            setDateData(doc.data().date.seconds);
         })
     }
     )

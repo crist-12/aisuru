@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useEffect, useState, useCallback } from 'react'
-import { View, Text, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native'
 import firebase from "../firebase/config"
 import { GiftedChat, Bubble, Send } from 'react-native-gifted-chat';
 import { getIdPareja, setIdPareja } from "../../data_store";
@@ -166,7 +166,7 @@ return(
           text,
           user
         })
-        .then(()=>{
+        .then(()=>{ 
           console.log("Mensaje enviado :)");
         })
         .catch((error)=>{
@@ -177,11 +177,13 @@ return(
 
 
     return (
+      <SafeAreaView style={{flex: 1}}>
       <ImageBackground 
       source = {require('../../assets/background.jpg')}
       resizeMode = {'stretch'}
       style = {{width: '100%', height: '100%', flex: 1}}
       > 
+      
         <View style={styles.header}>
         <TouchableOpacity onPress={()=>navigation.navigate('myTabs',{screen: 'Home'})}>
           <AntDesign
@@ -235,7 +237,9 @@ return(
             //renderActions = {photo}
             
         />
+        
         </ImageBackground>
+        </SafeAreaView>
     )
 }
 
