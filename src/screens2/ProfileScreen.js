@@ -9,26 +9,10 @@ import colores from '../utility/colors/colores'
 import { Dimensions } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from'react-native-vector-icons/MaterialIcons'
-import Gallery from 'react-native-image-gallery';
+import LottieView from 'lottie-react-native'
 
 const Container = styled.View`
     flex: 1;
-`
-
-const HeaderView = styled.View`
-    flex : 1;
-    
-`
-
-const AvatarView = styled.View`
-    flex : 1;
-`
-
-
-const MiddleView = styled.View`
-    flex : 1;
-    background-color : ${props => colores.lightpurple};
-    border-radius: 20px;
 `
 
 const AlbumView = styled.View`
@@ -38,6 +22,7 @@ const AlbumView = styled.View`
 
 
 const ProfileScreen=({navigation}) => {
+
 let arrayPhotos = [];
 const [coupleName, setCoupleName] = useState("");
 const [couplePhoto, setCouplePhoto] = useState();
@@ -48,22 +33,53 @@ const [hours, setHours] = useState(0);
 const [minutes, setMinutes] = useState(0);
 const [seconds, setSeconds] = useState(0);
 const [years, setYears] = useState(0);
-const [datos, setDatos] = useState([
-  {image: 'http://i.imgur.com/XP2BE7q.jpg', key: 'http://i.imgur.com/XP2BE7q.jpg'},
-  {image: 'http://i.imgur.com/XP2BE7q.jpg', key: 'http://i.imgur.com/XP2BE7q.jpg'},
-  {image: 'http://i.imgur.com/XP2BE7q.jpg', key: 'http://i.imgur.com/XP2BE7q.jpg'},
-  {image: 'http://i.imgur.com/XP2BE7q.jpg', key: 'http://i.imgur.com/XP2BE7q.jpg'},
-  {image: 'http://i.imgur.com/XP2BE7q.jpg', key: 'http://i.imgur.com/XP2BE7q.jpg'},
-])
+const [loading, setLoading] = useState(true);
+const [pics, setPics] = useState([]);
 
 
 useEffect(() => {
+    setLoading(true);
+    setPics([]);
     getIdPareja();
     coupleData();
+    
+    //console.log(pics);
     setImage(firebase.auth().currentUser.photoURL);
-    console.log(getDateData());
+    //console.log(getDateData());
     diffDates();
-    obtenerDatos();
+
+/* async function getPictures(){
+    var listRef = firebase.storage().ref().child('profiles/');
+
+    console.log("Estoy en pictures antes del foreach");
+     listRef.listAll().then(function(res){
+         res.items.forEach(function(itemRef){
+          itemRef.getDownloadURL().then(function (link) {
+         //   console.log(link);
+            arrayPhotos.push(link);
+            setPics([...pics, link]);
+           // console.log("Estoy en el ciclo");
+            //setLoading(true);
+        /*    pics.forEach(element=>{
+              console.log(element);
+            }) 
+            arrayPhotos.forEach(element=>{
+              console.log(element);
+            })
+          })
+        
+       })
+     })
+  } */
+  getAlbumPhotos();
+  //getPictures();  
+    setLoading(false);
+
+   /* setTimeout(() => {
+      
+    }, 3000); */
+
+    
    // console.log(firebase.auth().currentUser.photoURL);
     (async () => {
       if (Platform.OS !== 'web') {
@@ -78,25 +94,35 @@ useEffect(() => {
 const coupleData = () => {
     return firebase.firestore().collection('users').where('id','==',getUserCod().toString()).onSnapshot((querySnapShot) => {
         querySnapShot.forEach(doc => {
-          console.log(doc.data());
+       //   console.log(doc.data());
           setCoupleName(doc.data().name);
           setCouplePhoto(doc.data().photoUrl);
         })
     })
 }
 
-/*
-* Esta será la funcion para obtener las fotos :)
-const getAllPhotos = () =>{
-  return firebase.firestore().collection('photos').where('id','==',getIdPareja()).onSnapshot((querySnapShot) => {
-    querySnapShot.forEach(doc => {
+const getAlbumPhotos = async() => {
+  let docName = getIdPareja().toString();
+  let aux = [];
+  setPics([]);
+  await firebase.firestore().collection("albumes").doc(docName).collection("photos")
+  .onSnapshot((snap)=> {
+    snap.docs.map((doc)=> {
+    //  console.log(doc.data());
+      console.log(aux.length);
 
+      let data = {
+        id: doc.data().valueId,
+        value: doc.data().value
+      }
+      aux.push(data);
+      setPics([]);
+      setPics(aux);
     })
-  })
-}*/
-
-
-
+  }
+  )
+  aux.length = 0;
+}
 
 
 const diffDates = () =>{
@@ -111,8 +137,6 @@ const diffDates = () =>{
     var SecPerDay = secPerHour * 24;
     var secPerYear = SecPerDay * 365;
 
-    console.log("Aux es: "+aux);
-    console.log("Hoy es: "+now);
     var diff = now - aux;
 
 
@@ -130,35 +154,77 @@ const diffDates = () =>{
 
     var seconds = Math.floor(diff);
 
-    console.log(days);
+   // console.log(days);
     setDays(days);
-    console.log(hours);
+    //console.log(hours);
     setHours(hours);
-    console.log(minutes);
+   // console.log(minutes);
     setMinutes(minutes);
-    console.log(seconds);
+  //  console.log(seconds);
     setSeconds(seconds);
     setYears(years);
 }
 
 
-const listAllPhotos = async() => {
- var listRef = firebase.storage().ref().child('profiles/');
+const pickImage2 = async() =>{
+  let result = await ImagePicker.launchImageLibraryAsync();
+  //let result = await ImagePicker.launchImageLibraryAsync();
+  //console.log(result);
+  let name = (Math.random()*(99999-1)+1);
 
-
-  listRef.listAll().then(function(res){
-     res.items.forEach(function(itemRef){
-      itemRef.getDownloadURL().then(function (link) {
-        console.log(link);
-        arrayPhotos.push(link);
-      })
-    
-   })
- })
+  if (!result.cancelled) {
+    setImage(result.uri);
+    example2(result.uri, name);
+  }
 }
 
-const obtenerDatos = async() => {
-  await listAllPhotos();
+const example2 = async(uri, imageName) => {
+  let docName = getIdPareja().toString();
+  const blob = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      resolve(xhr.response);
+    };
+    xhr.onerror = function(e) {
+      console.log(e);
+      reject(new TypeError('Network request failed'));
+    };
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri, true);
+    xhr.send(null);
+  });
+
+  let name = (Math.random()*(99999-1)+1);
+
+  const ref = firebase
+    .storage()
+    .ref()
+    .child(docName+"/"+name);
+  const snapshot = await ref.put(blob);
+
+  // We're done with the blob, close and release it
+  blob.close();
+
+  const link3 = await snapshot.ref.getDownloadURL();
+  setLink(link3);
+
+  var value = link3.toString();
+  let valueId = (Math.random()*(99999-1)+1);
+
+    var albumRef = firebase.firestore().collection("albumes").doc(docName).collection("photos");
+    albumRef
+    .doc((Math.random()*(999999-1)+1).toString())
+    .set({
+      value,
+      valueId
+    })
+    .then(()=>{ 
+      console.log("Album enviado :)");
+    })
+    .catch((error)=>{
+      console.log("Pasó algo malo :(");
+    })
+//  console.log(firebase.auth().currentUser);
 }
 
 const pickImage = async() =>{
@@ -227,6 +293,14 @@ const pickImage = async() =>{
 
     return(
       <Container style={{flex: 1}}>  
+      {
+        loading?    
+        <LottieView
+          style = {{flex:1}}
+          source = {require('../lottie/loader.json')}
+          autoPlay = {true}
+          loop = {true}/>:
+        <>
         <View style={{backgroundColor: colores.middlepurple, flex:1}}>
         <View style={styles.header}>
           <View style={styles.leftView}>
@@ -326,7 +400,7 @@ const pickImage = async() =>{
           <View style={styles.albumLine}>
             <View style= {{flexDirection: 'row', justifyContent: 'space-between'}}>
             <Text style={styles.albumText}> Nuestro álbum</Text>
-            <TouchableOpacity style={{backgroundColor: colores.lightpurple, height: 30, width: 30, borderRadius: 30, justifyContent: 'center', alignItems: 'center'}}>
+            <TouchableOpacity style={{backgroundColor: colores.lightpurple, height: 30, width: 30, borderRadius: 30, justifyContent: 'center', alignItems: 'center'}} onPress={pickImage2}>
                 <MaterialIcons
                 name = "add-photo-alternate"
                 size = {22}
@@ -335,15 +409,15 @@ const pickImage = async() =>{
               </TouchableOpacity>
             </View>
             <View style={{backgroundColor: 'white'}}>
-              <Text>Hola</Text>
             </View>
             <FlatList
-              data={arrayPhotos}
+              data={pics}
               numColumns = {2}
+              keyExtractor={item => item.id}
               renderItem={({item})=>(
                 <>
                 <Image 
-                source = {{uri: item.image}}
+                source = {{uri: item.value}}
                 style = {styles.imageStyle}
                 />
                 </>
@@ -351,13 +425,11 @@ const pickImage = async() =>{
               
           />
           </View>
-
-         
-          
         </ScrollView>
         </AlbumView>
         </View>
-        
+        </>
+        }
       </Container>
     )
 }

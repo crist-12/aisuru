@@ -31,6 +31,7 @@
     "react-native-animatable": "^1.3.3",
     "react-native-awesome-alerts": "^1.5.0",
     "react-native-circle-floatmenu": "^0.1.1",
+    "react-native-dialog": "^8.1.1",
     "react-native-elements": "^3.4.2",
     "react-native-gesture-handler": "~1.10.2",
     "react-native-gifted-chat": "^0.16.3",

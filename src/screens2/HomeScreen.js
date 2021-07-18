@@ -272,6 +272,7 @@ if(searchObject){
         setUser(firebase.auth().currentUser.displayName);
     })
 
+
     const usRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
     usRef.update({
         "status" : true
