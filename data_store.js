@@ -45,7 +45,6 @@ export const getCoupleObject = () =>{
 
 export const setDateData = (_date) =>{
     date = _date;
-    console.log("Fui seteado :)");
 }
 
 export const getDateData = () =>{

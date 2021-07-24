@@ -1,11 +1,14 @@
-import React, {useState} from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Pressable } from 'react-native'
+import React, {useState, useEffect} from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Pressable, Input, FlatList } from 'react-native'
 import colores from '../utility/colors/colores'
 import {MaterialCommunityIcons} from 'react-native-vector-icons'
+import { getIdPareja, setIdPareja, getDateData } from "../../data_store";
 import styled from 'styled-components'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
 import Dialog from "react-native-dialog";
+import LottieView from 'lottie-react-native'
+import firebase from "../firebase/config"
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Action = styled.View`
@@ -24,14 +27,74 @@ const InputEmail = styled.TextInput`
 const ProfileScreen=({navigation})=> {
 
 const [modalVisible, setModalVisible] = useState(false);
-const [title, setTitle] = useState("");
-const [desc, setDesc] = useState("");
+const [title, setTitle] = useState(null);
+const [desc, setDesc] = useState(null);
 const [dateEvent, setDateEvent] = useState(null);
 const [date, setDate] = useState(new Date(1598051730000));
 const [mode, setMode] = useState('date');
 const [show, setShow] = useState(false);
+const [id, setId] = useState(getIdPareja());
+const [dialog, setDialog] = useState(false);
+const [arrayEvento, setArrayEvento] = useState([]);
+const [loading, setLoading] = useState(true);
+const [aniversario, setAniversario] =useState(getDateData());
+var aux = [];
 
- 
+
+useEffect(() =>{
+    getAllEvents();
+    setLoading(false);
+    closestEvent();
+}, [])
+
+
+const getAllEvents = async() =>{
+    let docName = getIdPareja().toString();
+    firebase.firestore().collection("listado").doc(docName).collection("eventos").orderBy('createdAt','desc')
+       .onSnapshot((snap) => {
+           snap.docs.map((doc) => {
+               //  console.log(doc.data());
+               //console.log(aux.length);
+               let data = {
+                   title: doc.data().title,
+                   desc: doc.data().desc,
+                   date: doc.data().date,
+                   createdAt: doc.data().createdAt,
+                   createdBy: doc.data().createdBy
+               };
+               aux.push(data);
+               //console.log(aux.length);
+               setArrayEvento(aux);
+           });
+       }
+       )
+}
+
+const closestEvent = () => {
+    let docName = getIdPareja().toString();
+    let today = new Date();
+    today = today.toLocaleDateString();
+
+    firebase.firestore().collection("listado").doc(docName).collection("eventos").where('date','>=', today).orderBy('date','desc').limit(1)
+       .onSnapshot((snap) => {
+           snap.docs.map((doc) => {
+               //  console.log(doc.data());
+               //console.log(aux.length);
+               console.log("ENTRE A CONDICIONAL");
+               let data = {
+                   title: doc.data().title,
+                   desc: doc.data().desc,
+                   date: doc.data().date,
+                   createdAt: doc.data().createdAt,
+                   createdBy: doc.data().createdBy
+               };
+               aux.push(data);
+               alert(doc.data().title);
+           });
+       }
+       )
+}
+
 
 const onChangeDT = (event, selectedDate) => {
     const currentDate = selectedDate || date;
@@ -39,9 +102,68 @@ const onChangeDT = (event, selectedDate) => {
     setDate(currentDate);
   };
 
+const addEvento = ()=>{
+    var eventoRef = firebase.firestore().collection("listado").doc(id).collection("eventos");
+    let today = new Date();
+    var eventoObject = {
+        id: (Math.random()*(99999999-1)+1).toString(),
+        title : title,
+        desc: desc,
+        date: date,
+        createdAt: today,
+        createdBy: firebase.auth().currentUser.displayName
+    }
+
+    eventoRef
+    .doc((Math.random()*(999999-1)+1).toString())
+    .set(eventoObject)
+    .then(()=>{ 
+      console.log("Mensaje enviado :)");
+      navigation.reset({
+          index: 0,
+          routes: [{name: 'Event'}]
+      })
+    })
+    .catch((error)=>{
+      console.log("Pasó algo malo :(");
+    })
+    console.log(title);
+    console.log(desc);
+    console.log(date);
+}
+
+const readValues = () => {
+    let docName = getIdPareja().toString();
+    firebase.firestore().collection("listado").doc(docName).collection("eventos")
+       .onSnapshot((snap) => {
+           snap.docs.map((doc) => {
+               //  console.log(doc.data());
+               //console.log(aux.length);
+               let data = {
+                   title: doc.data().title,
+                   desc: doc.data().desc,
+                   date: doc.data().date
+               };
+               aux.push(data);
+               console.log(aux.length);
+               setArrayEvento(aux);
+           });
+       }
+       )  
+}
+
 
     return (
         <View style={styles.container}>
+            {
+              loading?
+                <LottieView
+                style = {{flex:1}}
+                source = {require('../lottie/loader.json')}
+                autoPlay = {true}
+                loop = {true}/>
+            :
+            <>
            <View style={styles.header}>
                <View style={styles.headerText}>
                <Text style={styles.title}>Mis Eventos</Text>
@@ -61,7 +183,7 @@ const onChangeDT = (event, selectedDate) => {
                     color = {colores.darkviolet}
                     /> 
                 <Text style={{marginLeft: 10}}>
-                    Nuestro Aniversario
+                    Nuestro Aniversario: {aniversario}
                 </Text>
                 </View>
                 <View style={{flexDirection:'row'}}>
@@ -107,8 +229,8 @@ const onChangeDT = (event, selectedDate) => {
                         <View>
                             <Text style={{color: "white"}}>.</Text>
                         </View>
-                        <View style={{width: 40, height: 40, borderRadius: 40, backgroundColor: colores.darkviolet, justifyContent: 'center', alignItems: 'center'}}>
-                            <TouchableOpacity onPress={() => setModalVisible(true)}>
+                        <View style={{margin: 10,width: 40, height: 40, borderRadius: 40, backgroundColor: colores.darkviolet, justifyContent: 'center', alignItems: 'center'}}>
+                            <TouchableOpacity onPress={() => setDialog(true)}>
                                 <MaterialCommunityIcons
                                     name="book-plus-multiple"
                                     size= {20}
@@ -126,51 +248,71 @@ const onChangeDT = (event, selectedDate) => {
                                       onChange={onChangeDT}
                                       />:
                                       null
-                                  }       
-                                    
-                                   
-                            
-    </View>
+                                  }                              
+                        </View>
                         <View>
-                        <Dialog.Container visible={true}>
+                        <Dialog.Container visible={dialog}>
                         <Dialog.Title>Nuevo Evento</Dialog.Title>
                         <Dialog.Description>
                             Los eventos son celebraciones que merencen ser recordadas.
                             ¡Vamos a registrar un nuevo evento!
                         </Dialog.Description>
-                        <Dialog.Input label="Título" placeholder="Ingrese título" value={title} onChange={text => setTitle(text)}/>
-                        <Dialog.Input label="Descripción" placeholder="Ingrese descripción" value={desc} onChange={desc => setDesc(text)}/>
-                        <Dialog.Input label="Fecha" placeholder= {date.toString()} value={date} editable={false}/>
+                        <Dialog.Input label="Título" placeholder="Ingrese título" value={title} onChangeText={setTitle}/>
+                        <Dialog.Input label="Descripción" placeholder="Ingrese descripción" value={desc} onChangeText={setDesc}/>
+                        <Dialog.Input label="Fecha" placeholder= {date.toString()} value={date.toLocaleDateString('es-ES')} editable={false}/>
                         <Dialog.Description> Define la fecha presionando la opción "Establecer Fecha"</Dialog.Description>
                         <Dialog.Button label="ESTABLECER FECHA" onPress={()=>setShow(true)}/>
-                        <Dialog.Button label="Aceptar" />
-                        <Dialog.Button label="Cancelar" />
+                        <Dialog.Button label="Aceptar"  onPress={()=>addEvento()}/>
+                        <Dialog.Button label="Cancelar" onPress={()=>setDialog(false)}/>
                         </Dialog.Container>
                         </View>
 
                     </View>
                     </View>
-                    <View style={styles.cardView}>
-                        <View style={styles.topBar}>
-
-                        </View>
-                        <View style={styles.bodyCard}>
-                            <View style={styles.typeView}>
-                             <MaterialCommunityIcons
-                             name="cake"
-                             size={50}
-                             />   
-                            </View>
-                            <View style={styles.dataView}>
-                                <Text style={styles.dataText}>Título de la celebración</Text>
-                                <Text style={{fontWeight: 'bold'}}>17-07-2019</Text>
-                                <Text>Esta es una Descripciónon</Text>
-                            </View>
-                        </View>
-                    </View>
+                    <FlatList
+                        data={arrayEvento}
+                        keyExtractor={item => item.id}
+                        style={{marginTop: 40}}
+                        renderItem={({item})=>(
+                            <>
+                            <View style={styles.cardView}>
+                                    <View style={styles.topBar}>
+                                        <View style={[styles.crudButton, {backgroundColor: 'green'}]}>
+                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+                                            <MaterialCommunityIcons
+                                                name="comment-edit-outline"
+                                                size= {18}
+                                                color = "white"
+                                            />
+                                            </TouchableOpacity>
+                                        </View>
+                                        <View style={[styles.crudButton, {backgroundColor: 'red'}]}>
+                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+                                            <MaterialCommunityIcons
+                                                name="delete-empty"
+                                                size= {18}
+                                                color = "white"
+                                            />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={styles.bodyCard}>
+                                        <View style={styles.dataView}>
+                                            <Text style={styles.dataText}>{item.title}</Text>
+                                            <Text style={{fontWeight: 'bold'}}>{item.date.toDate().toLocaleDateString()}</Text>
+                                            <Text>{item.desc}</Text>
+                                            <Text>Creado por {item.createdBy}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </>
+                        )}  
+                    />   
                 </View>
             </View>       
             </View>
+            </>
+}
         </View>
     )
 }
@@ -242,10 +384,19 @@ const styles = StyleSheet.create({
         borderStyle: 'solid',
         borderWidth: 1
     },
+    crudButton: {
+        height: 25,
+        width: 25,
+        borderRadius: 25,
+        marginHorizontal: 10
+    },
     topBar: {
         height: 30,
         backgroundColor: colores.smallCircleColor,
-        borderBottomWidth: 1
+        borderBottomWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flexDirection: 'row'
     },
     bodyCard: {
         flexDirection: 'row',

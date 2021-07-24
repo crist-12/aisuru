@@ -220,6 +220,10 @@ const example2 = async(uri, imageName) => {
     })
     .then(()=>{ 
       console.log("Album enviado :)");
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Perfil'}]
+    })
     })
     .catch((error)=>{
       console.log("Pasó algo malo :(");
