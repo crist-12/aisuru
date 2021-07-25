@@ -11,6 +11,7 @@ import LottieView from 'lottie-react-native'
 import firebase from "../firebase/config"
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+
 const Action = styled.View`
     flex-direction: row;
     margin-top: 10;
@@ -35,22 +36,30 @@ const [mode, setMode] = useState('date');
 const [show, setShow] = useState(false);
 const [id, setId] = useState(getIdPareja());
 const [dialog, setDialog] = useState(false);
+const [dialog2, setDialog2] = useState(false);
+const [dialog3, setDialog3] = useState(false);
 const [arrayEvento, setArrayEvento] = useState([]);
 const [loading, setLoading] = useState(true);
 const [aniversario, setAniversario] =useState(getDateData());
+const [clTitle, setclTitle] = useState("No hay eventos cercanos");
+const [clDate, setclDate] = useState("");
+const [clDesc, setclDesc] = useState("");
 var aux = [];
 
 
 useEffect(() =>{
     getAllEvents();
     setLoading(false);
-    closestEvent();
+   closestEvent();
 }, [])
+
+
+
 
 
 const getAllEvents = async() =>{
     let docName = getIdPareja().toString();
-    firebase.firestore().collection("listado").doc(docName).collection("eventos").orderBy('createdAt','desc')
+    firebase.firestore().collection("listado").doc(docName).collection("eventos").where('visible','==',true)
        .onSnapshot((snap) => {
            snap.docs.map((doc) => {
                //  console.log(doc.data());
@@ -60,7 +69,8 @@ const getAllEvents = async() =>{
                    desc: doc.data().desc,
                    date: doc.data().date,
                    createdAt: doc.data().createdAt,
-                   createdBy: doc.data().createdBy
+                   createdBy: doc.data().createdBy,
+                   id: doc.data().id
                };
                aux.push(data);
                //console.log(aux.length);
@@ -70,26 +80,52 @@ const getAllEvents = async() =>{
        )
 }
 
+const updateEvent = (_id, _title, _desc, _createdAt, _createdBy, _visible) =>{
+    var eventoRef = firebase.firestore().collection("listado").doc(id).collection("eventos");
+    var eventoObject = {
+        id: _id,
+        title : _title,
+        desc: _desc,
+        date: date,
+        createdAt: _createdAt,
+        createdBy: _createdBy,
+        visible : _visible
+    }
+
+    eventoRef
+    .doc(_id)
+    .set(eventoObject)
+    .then(()=>{ 
+    if(_visible)
+      alert("Evento actualizado exitosamente");
+    else
+       alert("Evento eliminado");
+      navigation.reset({
+          index: 0,
+          routes: [{name: 'Event'}]
+      })
+    })
+    .catch((error)=>{
+      console.log("Pasó algo malo :(");
+    })
+}
+
+
 const closestEvent = () => {
     let docName = getIdPareja().toString();
     let today = new Date();
-    today = today.toLocaleDateString();
 
-    firebase.firestore().collection("listado").doc(docName).collection("eventos").where('date','>=', today).orderBy('date','desc').limit(1)
+    firebase.firestore().collection("listado").doc(docName).collection("eventos").where('date','>=', today).where('visible','==',true).orderBy('date','asc').limit(1)
        .onSnapshot((snap) => {
            snap.docs.map((doc) => {
                //  console.log(doc.data());
                //console.log(aux.length);
-               console.log("ENTRE A CONDICIONAL");
-               let data = {
-                   title: doc.data().title,
-                   desc: doc.data().desc,
-                   date: doc.data().date,
-                   createdAt: doc.data().createdAt,
-                   createdBy: doc.data().createdBy
-               };
-               aux.push(data);
-               alert(doc.data().title);
+             //  alert("ENTRE A CONDICIONAL");
+               setclTitle(doc.data().title);
+               setclDesc(doc.data().desc);
+               setclDate(doc.data().date.toDate().toLocaleDateString());
+              // console.log(closest);
+           //    alert("He entrado a "+doc.data().title)
            });
        }
        )
@@ -105,17 +141,19 @@ const onChangeDT = (event, selectedDate) => {
 const addEvento = ()=>{
     var eventoRef = firebase.firestore().collection("listado").doc(id).collection("eventos");
     let today = new Date();
+    let UID = (Math.random()*(99999999-1)+1).toString()
     var eventoObject = {
-        id: (Math.random()*(99999999-1)+1).toString(),
+        id: UID,
         title : title,
         desc: desc,
         date: date,
         createdAt: today,
-        createdBy: firebase.auth().currentUser.displayName
+        createdBy: firebase.auth().currentUser.displayName,
+        visible : true
     }
 
     eventoRef
-    .doc((Math.random()*(999999-1)+1).toString())
+    .doc(UID)
     .set(eventoObject)
     .then(()=>{ 
       console.log("Mensaje enviado :)");
@@ -131,27 +169,6 @@ const addEvento = ()=>{
     console.log(desc);
     console.log(date);
 }
-
-const readValues = () => {
-    let docName = getIdPareja().toString();
-    firebase.firestore().collection("listado").doc(docName).collection("eventos")
-       .onSnapshot((snap) => {
-           snap.docs.map((doc) => {
-               //  console.log(doc.data());
-               //console.log(aux.length);
-               let data = {
-                   title: doc.data().title,
-                   desc: doc.data().desc,
-                   date: doc.data().date
-               };
-               aux.push(data);
-               console.log(aux.length);
-               setArrayEvento(aux);
-           });
-       }
-       )  
-}
-
 
     return (
         <View style={styles.container}>
@@ -218,11 +235,12 @@ const readValues = () => {
                     </View>
                     <View style={{flex: 3, marginTop: 10}}>
                         <Text style={styles.cakeText}>Evento Próximo</Text>
-                        <Text style={styles.cakeDesc}>Descripción del Evento</Text>
-                        <Text>Fecha</Text>
+                        <Text style={styles.cakeDesc}>{clTitle}</Text>
+                        <Text style={styles.cakeDesc}>{clDesc}</Text>
+                        <Text>{clDate}</Text>
                     </View>
                 </View>
-                <View style={{flex: 3}}>
+                <View style={{flex: 3, marginTop: 10}}>
                     <View style={{flexDirection: 'row', alignItems: 'center', flex:1}}>
                     <Text style={{margin: 10, fontSize: 16, fontWeight: 'bold'}}>Listado de Eventos</Text>
                     <View style={{ justifyContent: 'flex-end', flex:1, flexDirection: 'row', margin: 10}}>
@@ -271,14 +289,14 @@ const readValues = () => {
                     </View>
                     <FlatList
                         data={arrayEvento}
-                        keyExtractor={item => item.id}
+                        keyExtractor={(item) => item.key}
                         style={{marginTop: 40}}
                         renderItem={({item})=>(
                             <>
                             <View style={styles.cardView}>
                                     <View style={styles.topBar}>
                                         <View style={[styles.crudButton, {backgroundColor: 'green'}]}>
-                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}} onPress={()=>setDialog2(true)}>
                                             <MaterialCommunityIcons
                                                 name="comment-edit-outline"
                                                 size= {18}
@@ -287,7 +305,7 @@ const readValues = () => {
                                             </TouchableOpacity>
                                         </View>
                                         <View style={[styles.crudButton, {backgroundColor: 'red'}]}>
-                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+                                            <TouchableOpacity style={{flex: 1, alignItems: 'center', justifyContent: 'center'}} onPress={()=>setDialog3(true)}>
                                             <MaterialCommunityIcons
                                                 name="delete-empty"
                                                 size= {18}
@@ -305,6 +323,30 @@ const readValues = () => {
                                         </View>
                                     </View>
                                 </View>
+
+                                <View>
+                        <Dialog.Container visible={dialog2}>
+                        <Dialog.Title>Editar Evento</Dialog.Title>
+                        <Dialog.Input label="Código" placeholder= {item.id} value={item.id} editable={false}/>
+                        <Dialog.Input label="Título" placeholder="Ingrese título" value={item.title} onChangeText={(text)=>{item.title = text; setTitle(item.title)}}/>
+                        <Dialog.Input label="Descripción" placeholder="Ingrese descripción" value={item.desc} onChangeText={(text)=>{item.desc = text; setDesc(item.desc)}}/>
+                        <Dialog.Input label="Fecha" placeholder= {item.date.toDate().toLocaleDateString()} value={date.toLocaleDateString()} editable={false}/>
+                        <Dialog.Description> Define la fecha presionando la opción "Establecer Fecha"</Dialog.Description>
+                        <Dialog.Button label="Definir fecha" onPress={()=>setShow(true)}/>
+                        <Dialog.Button label="Actualizar"  onPress={()=>updateEvent(item.id, item.title, item.desc, item.createdAt, item.createdBy, true)}/>
+                        <Dialog.Button label="Cancelar" onPress={()=>setDialog2(false)}/>
+                        </Dialog.Container>
+                        </View>
+
+                        <View>
+                        <Dialog.Container visible={dialog3}>
+                        <Dialog.Title>Eliminar Evento</Dialog.Title>
+                        <Dialog.Description>Estás a punto de eliminar el evento "{item.title}"</Dialog.Description>
+                        <Dialog.Description>Esta acción no puede deshacerse</Dialog.Description>
+                        <Dialog.Button label="Sí, quiero eliminar"  onPress={()=>updateEvent(item.id, item.title, item.desc, item.createdAt, item.createdBy, false)}/>
+                        <Dialog.Button label="Cancelar" onPress={()=>setDialog3(false)}/>
+                        </Dialog.Container>
+                        </View>
                             </>
                         )}  
                     />   

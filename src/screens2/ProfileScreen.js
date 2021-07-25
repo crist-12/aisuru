@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView , TouchableOpacity, FlatList, Image} from 'react-native'
 import styled from 'styled-components'
 import { Avatar, Accessory } from 'react-native-elements'
@@ -10,6 +10,9 @@ import { Dimensions } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from'react-native-vector-icons/MaterialIcons'
 import LottieView from 'lottie-react-native'
+import { DynamicCollage, StaticCollage } from "react-native-images-collage";
+import ViewShot from '@zt-mobile/react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 
 const Container = styled.View`
     flex: 1;
@@ -35,52 +38,20 @@ const [seconds, setSeconds] = useState(0);
 const [years, setYears] = useState(0);
 const [loading, setLoading] = useState(true);
 const [pics, setPics] = useState([]);
-
+const [random, setRandom] = useState([]);
+const [flag, setFlag] = useState(false);
+const [uri, setUri] = useState(null);
+const viewShotRef = useRef();
 
 useEffect(() => {
     setLoading(true);
     setPics([]);
     getIdPareja();
     coupleData();
-    
-    //console.log(pics);
     setImage(firebase.auth().currentUser.photoURL);
-    //console.log(getDateData());
     diffDates();
-
-/* async function getPictures(){
-    var listRef = firebase.storage().ref().child('profiles/');
-
-    console.log("Estoy en pictures antes del foreach");
-     listRef.listAll().then(function(res){
-         res.items.forEach(function(itemRef){
-          itemRef.getDownloadURL().then(function (link) {
-         //   console.log(link);
-            arrayPhotos.push(link);
-            setPics([...pics, link]);
-           // console.log("Estoy en el ciclo");
-            //setLoading(true);
-        /*    pics.forEach(element=>{
-              console.log(element);
-            }) 
-            arrayPhotos.forEach(element=>{
-              console.log(element);
-            })
-          })
-        
-       })
-     })
-  } */
-  getAlbumPhotos();
-  //getPictures();  
+    getAlbumPhotos();
     setLoading(false);
-
-   /* setTimeout(() => {
-      
-    }, 3000); */
-
-    
-   // console.log(firebase.auth().currentUser.photoURL);
     (async () => {
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -100,6 +71,43 @@ const coupleData = () => {
         })
     })
 }
+
+const captureViewShot = async() => {
+  const imageUri = await viewShotRef.current.capture();
+  console.log(imageUri);
+  setUri(imageUri);
+
+  //'https://www.elsoldetlaxcala.com.mx/incoming/sk14n2-balltzehk/ALTERNATES/LANDSCAPE_1140/Balltzehk'
+
+
+  if (!(await Sharing.isAvailableAsync())) {
+    alert(`Oh, no. Parece que la opción de compartir no está disponible en tu teléfono.`);
+    return;
+  }
+
+  await Sharing.shareAsync(imageUri);
+  setFlag(false);
+}
+
+
+let openShareDialogAsync = async () => {
+
+}; 
+
+const getRandomAlbum = () => {
+
+  console.log("Hola");
+  let randomAux = [];
+  for(let i=0; i<=3; i++){
+    randomAux[i] = pics[Math.floor(Math.random() * pics.length)].value;
+    console.log(randomAux[i]);
+  }
+  setRandom(randomAux);
+  setFlag(true);
+}
+
+
+
 
 const getAlbumPhotos = async() => {
   let docName = getIdPareja().toString();
@@ -154,13 +162,9 @@ const diffDates = () =>{
 
     var seconds = Math.floor(diff);
 
-   // console.log(days);
     setDays(days);
-    //console.log(hours);
     setHours(hours);
-   // console.log(minutes);
     setMinutes(minutes);
-  //  console.log(seconds);
     setSeconds(seconds);
     setYears(years);
 }
@@ -168,8 +172,6 @@ const diffDates = () =>{
 
 const pickImage2 = async() =>{
   let result = await ImagePicker.launchImageLibraryAsync();
-  //let result = await ImagePicker.launchImageLibraryAsync();
-  //console.log(result);
   let name = (Math.random()*(99999-1)+1);
 
   if (!result.cancelled) {
@@ -202,7 +204,6 @@ const example2 = async(uri, imageName) => {
     .child(docName+"/"+name);
   const snapshot = await ref.put(blob);
 
-  // We're done with the blob, close and release it
   blob.close();
 
   const link3 = await snapshot.ref.getDownloadURL();
@@ -228,13 +229,10 @@ const example2 = async(uri, imageName) => {
     .catch((error)=>{
       console.log("Pasó algo malo :(");
     })
-//  console.log(firebase.auth().currentUser);
 }
 
 const pickImage = async() =>{
     let result = await ImagePicker.launchImageLibraryAsync();
-    //let result = await ImagePicker.launchImageLibraryAsync();
-    //console.log(result);
     if (!result.cancelled) {
       setImage(result.uri);
       example(result.uri, "Holi");
@@ -263,21 +261,17 @@ const pickImage = async() =>{
       .child("profiles/"+firebase.auth().currentUser.uid);
     const snapshot = await ref.put(blob);
   
-    // We're done with the blob, close and release it
     blob.close();
   
     const link3 = await snapshot.ref.getDownloadURL();
     setLink(link3);
 
-  //  console.log(firebase.auth().currentUser);
-
     firebase.auth().currentUser.updateProfile({
         photoURL : link3
       })
       .then(()=>{
-       // console.log(firebase.auth().currentUser)
+  
         console.log("Foto actualizado")
-        //console.log(response.user)
       })
       .catch(()=>{
         alert("OCURRIO UN ERROR")
@@ -315,8 +309,7 @@ const pickImage = async() =>{
                uri : firebase.auth().currentUser.photoURL
               }}
               onPress = {pickImage}
-            //  avatarStyle = {{borderWidth: 2, borderColor: colores.middlepurple}}
-                >
+          >
                     <Avatar.Accessory
                         name="pencil-alt"
                         type="font-awesome-5"
@@ -402,11 +395,32 @@ const pickImage = async() =>{
 
 
           <View style={styles.albumLine}>
+            {
+              flag?
+              <>
+              <View><TouchableOpacity style={{width: Dimensions.get('window').width*0.8, height: 30, justifyContent:'center', alignItems: 'center', backgroundColor: colores.lightpurple, marginBottom: 10, borderRadius: 10}} onPress={captureViewShot}><Text>Compartir</Text></TouchableOpacity></View>
+              <ViewShot ref={viewShotRef} style={{flex:1}} options={{format: 'jpg', quality: 1.0}}>
+              
+              <DynamicCollage
+              width={Dimensions.get('window').width*0.8}
+              height={200}
+              images={ random }
+              matrix={ [ 1,2,1 ]}
+              />
+              </ViewShot></>:null
+            }
             <View style= {{flexDirection: 'row', justifyContent: 'space-between'}}>
             <Text style={styles.albumText}> Nuestro álbum</Text>
             <TouchableOpacity style={{backgroundColor: colores.lightpurple, height: 30, width: 30, borderRadius: 30, justifyContent: 'center', alignItems: 'center'}} onPress={pickImage2}>
                 <MaterialIcons
                 name = "add-photo-alternate"
+                size = {22}
+                color = "#fff"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={{backgroundColor: colores.lightpurple, height: 30, width: 30, borderRadius: 30, justifyContent: 'center', alignItems: 'center'}} onPress={getRandomAlbum}>
+                <MaterialCommunityIcons
+                name = "emoticon-happy-outline"
                 size = {22}
                 color = "#fff"
                 />

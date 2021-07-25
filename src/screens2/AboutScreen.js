@@ -1,146 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Image, View, Platform, Text } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import firebase from '../firebase/config'
+import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
+import React, { useState, useEffect, useRef } from 'react';
+import { Text, View, Button, Platform } from 'react-native';
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
-export default function ImagePickerExample() {
+export default function App() {
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState(false);
+  const notificationListener = useRef();
+  const responseListener = useRef();
 
-
-  const [image, setImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [transferred, setTransferred] = useState(0);
-  const [link, setLink] = useState("");
   useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+
+    // This listener is fired whenever a notification is received while the app is foregrounded
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
   }, []);
 
- /* const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    console.log(result);
-
-    if (!result.cancelled) {
-      setImage(result);
-    }
-  };
-
-  const uploadImage = async () => {
-    if( image == null ) {
-      return null;
-    }
-    const uploadUri = image;
-    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
-
-    // Add timestamp to File Name
-    const extension = filename.split('.').pop(); 
-    const name = filename.split('.').slice(0, -1).join('.');
-    filename = name + Date.now() + '.' + extension;
-
-    setUploading(true);
-    setTransferred(0);
-
-    const storageRef = firebase.storage().ref(`photos/${filename}`);
-    const task = storageRef.put(image);
-
-    // Set transferred state
-    task.on('state_changed', (taskSnapshot) => {
-      console.log(
-        `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
-      );
-
-      setTransferred(
-        Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
-          100,
-      );
-    });
-
-    try {
-      await task;
-
-      const url = await storageRef.getDownloadURL();
-
-      setUploading(false);
-      setImage(null);
-      console.log(url);
-      return url;
-
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
-
-  }; */
-
-  const pickImage = async() =>{
-    let result = await ImagePicker.launchImageLibraryAsync();
-    //let result = await ImagePicker.launchImageLibraryAsync();
-    //console.log(result);
-    if (!result.cancelled) {
-      setImage(result.uri);
-      example(result.uri, "Holi");
-        
-    }
-  }
-
-const uploadImage = async (uri, imageName) => {
-  console.log("El uri es: ");
-  console.log(uri.uri);
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    var ref = firebase.storage().ref().child("images/" + imageName);
-    ref.put(blob);
-    //const link2 = await ref.getDownloadURL();
-    //setLink(link2);
-  }
-
-  const example = async(uri, imageName) => {
-    const blob = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-        resolve(xhr.response);
-      };
-      xhr.onerror = function(e) {
-        console.log(e);
-        reject(new TypeError('Network request failed'));
-      };
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
-    });
-  
-    const ref = firebase
-      .storage()
-      .ref()
-      .child("images/"+imageName);
-    const snapshot = await ref.put(blob);
-  
-    // We're done with the blob, close and release it
-    blob.close();
-  
-    const link3 = await snapshot.ref.getDownloadURL();
-    setLink(link3);
-  }
-
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
-      {image && <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />}
-      <Button title="enviar" onPress={example}/>
-      <Text>{link}</Text>
-      <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/aisuru-app.appspot.com/o/images%2FHoli?alt=media&token=7018917c-2113-46c5-8cba-0bf71f8b3f31"}} style={{ width: 200, height: 200 }} />
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-around',
+      }}>
+      <Text>Your expo push token: {expoPushToken}</Text>
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Title: {notification && notification.request.content.title} </Text>
+        <Text>Body: {notification && notification.request.content.body}</Text>
+        <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
+      </View>
+      <Button
+        title="Press to Send Notification"
+        onPress={async () => {
+          await sendPushNotification(expoPushToken);
+        }}
+      />
     </View>
   );
+}
+
+// Can use this function below, OR use Expo's Push Notification Tool-> https://expo.io/notifications
+async function sendPushNotification(expoPushToken) {
+  const message = {
+    to: expoPushToken,
+    sound: 'default',
+    title: 'Recibiste un Aisu',
+    body: 'Te extraño :c',
+    data: { someData: 'goes here' },
+  };
+
+  await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Accept-encoding': 'gzip, deflate',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message),
+  });
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+  if (Constants.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log(token);
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  return token;
 }

@@ -1,5 +1,5 @@
-import React, {useEffect, useLayoutEffect, useState, LogBox} from 'react'
-import { View, Text, Button, ImageBackground, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from 'react-native'
+import React, {useEffect, useLayoutEffect, useState, useRef} from 'react'
+import { View, Text, Button, ImageBackground, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform} from 'react-native'
 import styled from 'styled-components'
 import firebase from "../firebase/config"
 import LottieView from 'lottie-react-native'
@@ -10,7 +10,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {setIdPareja, getIdPareja, setCoupleObject, setUserCod, setDateData} from '../../data_store'
 import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
 import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
-
+import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 
 const Container = styled.View`
     flex: 1;
@@ -101,6 +102,14 @@ const BottomView = styled.View`
     padding: 15px;
 `
 
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+
 const HomeScreen=({navigation})=> {
 
 let arrayParejas = [];
@@ -117,18 +126,103 @@ const [show, setShow] = useState(false);
 const [status, setStatus] = useState(null);
 const [statusSearch, setStatusSearch] = useState(null);
 const [banderita, setBanderita] = useState(false);
+const [expoPushToken, setExpoPushToken] = useState('');
+const [notification, setNotification] = useState(false);
+const notificationListener = useRef();
+const responseListener = useRef();
 
 
 useEffect(()=>{
   setLoading(true);
   handleParejas();
-  //setTimeout(handleParejas,1000);
   getStatusUser();
   setTimeout(getStatusUser,1000);
-  //setTimeout(handleParejas,1000);
-  setLoading(false);
 
+
+  registerForPushNotificationsAsync().then(
+      token => {
+          setExpoPushToken(token)
+          const usRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
+            usRef.update({
+                "expo-token" : expoPushToken
+            })
+            .then(()=>{
+                console.log("Token registrado exitosamente");
+            })
+            .catch(()=>{
+                console.log("Hubo un error al guardar token");
+            });
+        });
+
+  // This listener is fired whenever a notification is received while the app is foregrounded
+  notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    setNotification(notification);
+  });
+
+  // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
+  responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    console.log(response);
+  });
+  setLoading(false);
+  return () => {
+    Notifications.removeNotificationSubscription(notificationListener.current);
+    Notifications.removeNotificationSubscription(responseListener.current);
+  };
 },[navigation])
+
+
+async function sendPushNotification(expoPushToken) {
+    const message = {
+      to: expoPushToken,
+      sound: 'default',
+      title: 'Recibiste un Aisu',
+      body: 'Te extraño :c',
+      data: { someData: 'goes here' },
+    };
+  
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
+  }
+  
+  async function registerForPushNotificationsAsync() {
+    let token;
+    if (Constants.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        alert('Failed to get push token for push notification!');
+        return;
+      }
+      token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log(token);
+    } else {
+      alert('Must use physical device for Push Notifications');
+    }
+  
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+  
+    return token;
+  }
+
+
 
 
 const getStatusUser = () =>{
@@ -368,14 +462,13 @@ const signOut = () => {
                                     <CircleView>
 
                                         <View style={styles.bigCircle}>
-                                            <TouchableOpacity onPress={()=>signOut()}>
+                                            <TouchableOpacity onPress={async () => {await sendPushNotification(expoPushToken);}}>
                                         <View style={styles.smallCircle}>
                                            <Image
                                            source= {require('../../assets/6.png')}
                                            width = {Dimensions.get('window').width*0.5}
                                            height = {Dimensions.get('window').width*0.5}
                                            resizeMode = "center"
-                                           
                                            />
                                         </View>
                                         </TouchableOpacity>
@@ -401,7 +494,7 @@ const signOut = () => {
                                             
                                                 <View style={{flex: 1, marginBottom: 15}}>
                                                 <TextoInferior>¡Bienvenido a Aisuru!</TextoInferior>
-                                                <TouchableOpacity onPress={signOut}><Text>SignOut</Text></TouchableOpacity>
+                                                <TouchableOpacity onPress={async () => {await sendPushNotification(expoPushToken);}}><Text>SignOut</Text></TouchableOpacity>
                                                 <Text style={{marginTop: 15}}>Aisuru es más divertido con tu pareja</Text>
                                                 <Text style={{marginTop: 10, color: 'gray'}}>¡Comencemos esta aventura!</Text>
                                                 </View>
