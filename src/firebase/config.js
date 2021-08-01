@@ -27,7 +27,8 @@ const auth = firebase.auth();
 export {db, auth, app};*/
 
 import Firebase from "firebase";
-import "firebase/storage"
+import "firebase/auth";
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyC5w9-gv2RYiQJYM189wDDikGhYHcUY3Pg",

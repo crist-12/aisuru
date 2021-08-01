@@ -12,15 +12,13 @@ import * as Permissions from 'expo-permissions';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 
+
 const ChatScreen = ({navigation}) => {
 
-const [messages, setMessages] = useState([]);
-const [id, setId] = useState(getIdPareja());
+const [messages, setMessages] = useState([]); 
+const [id, setId] = useState(getIdPareja()); 
 const [image, setImage] = useState(null);
 const [link, setLink] = useState("");
-const [uploading, setUploading] = useState(false);
-const [transferred, setTransferred] = useState(0);
-
 
   useEffect(() => {
     console.log("El id de chat es: "+getIdPareja());
@@ -38,7 +36,6 @@ const [transferred, setTransferred] = useState(0);
   }, []);
 
 
-
   useLayoutEffect(()=>{
     let objArray = {
       _id : "",
@@ -54,72 +51,12 @@ const [transferred, setTransferred] = useState(0);
         createdAt : doc.data().createdAt.toDate(),
         text : doc.data().text,
         user : doc.data().user
-       // msgObject.push(objArray);
-        //console.log(messages);
-        //console.log(msgObject);
-       // console.log(objArray);
-        //msgObject.push(objArray);
-        //setMessages(msgObject);
       }))
       )
     )
-    
-  //  setMessages(msgObject);
-    
     return unsubscribe;
   },[])
 
-
-
-
-  const pickImage = async() =>{
-    let result = await ImagePicker.launchImageLibraryAsync();
-    //let result = await ImagePicker.launchImageLibraryAsync();
-    //console.log(result);
-    if (!result.cancelled) {
-      setImage(result.uri);
-      uploadFile(result.uri, "Holi");
-        
-    }
-  }
-
-  const uploadFile = async(uri, imageName) => {
-    const blob = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-        resolve(xhr.response);
-      };
-      xhr.onerror = function(e) {
-        console.log(e);
-        reject(new TypeError('Network request failed'));
-      };
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
-    });
-  
-    const ref = firebase
-      .storage()
-      .ref()
-      .child("images/"+imageName);
-    const snapshot = await ref.put(blob);
-  
-    // We're done with the blob, close and release it
-    blob.close();
-  
-    const link3 = await snapshot.ref.getDownloadURL();
-    setLink(link3);
-    setImage(link3);
-    console.log(link3);
-  }
-
-const photo = (props) =>{
-return(
-      <TouchableOpacity style={{margin: 10}} onPress={pickImage}>
-        <Feather name="camera" size={22} color={colores.darkviolet}/>
-      </TouchableOpacity>
-)
-}
 
   const scrollToBottomComponent = (props) => {
     return (

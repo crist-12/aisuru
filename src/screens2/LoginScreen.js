@@ -8,10 +8,9 @@ import {LoginRequest} from '../network';
 import colores from '../utility/colors/colores'
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { Store } from '../context/store'
-import { LOADING_START, LOADING_STOP } from '../context/actions/type'
 import { setAsyncStorage, keys } from '../asyncStorage'
 import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
-
+import Dialog from "react-native-dialog";
 import firebase from "../firebase/config";
 
 const Container = styled.View`
@@ -67,11 +66,12 @@ const SignUpText = styled.Text`
 const LoginScreen=({navigation}) => {
 
 const [email, setEmail] = useState('');
+const [visible, setVisible] = useState(false);
 const [password, setPassword] = useState('');
 const [error, setError] = useState(false);
 const [eye, setEye] = useState(true);
 const [catchError, setCatchError] = useState(false); 
-
+const [resetEmail, setResetEmail] = useState('');
 const globalState = useContext(Store);
 const { dispatchLoaderAction } = globalState;
 
@@ -81,14 +81,6 @@ const signIn = () => {
     }else if(!password){
         setError(true);
     }else{
-       /* dispatchLoaderAction({
-            type: LOADING_START,
-        });
-        setTimeout(()=>{
-            dispatchLoaderAction({
-                type: LOADING_STOP,
-            });
-        },2000); */
         LoginRequest(email, password)
         .then((res)=>{
             setAsyncStorage(keys.uuid, res.user.uid);
@@ -113,25 +105,15 @@ const signIn = () => {
                 />
         })
     }
+}
 
-    /*
-    auth.signInWithEmailAndPassword(email, password)
-    .catch((error)=>{
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        <AwesomeAlert
-                show={catchError}
-                showProgress={false}
-                title="¡Oh, no!"
-                message= {errorMessage}
-                closeOnTouchOutside={true}
-                closeOnHardwareBackPress={false}
-                showCancelButton={true}
-                cancelText="Entendido"
-                confirmButtonColor="#DD6B55"
-                onCancelPressed={() => handleError()}
-            />
-    }) */
+const resetPassword = async() => {
+    try{
+        await firebase.auth().sendPasswordResetEmail(resetEmail);
+        alert("Se ha enviado un correo de recuperación a tu cuenta");
+    }catch(error){
+        alert("Ocurrió un error al tratar de resetear la contraseña "+error.message);
+    }
 }
 
 const handleCancel = () =>{
@@ -168,6 +150,14 @@ useEffect(() => {
     >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Container>
+        <View>
+          <Dialog.Container visible={visible}>
+          <Dialog.Title>Olvidé mi contraseña</Dialog.Title>
+          <Dialog.Input label="Mi email" placeholder="Email" value={resetEmail} onChangeText={(text)=>{setResetEmail(text)}}/>
+          <Dialog.Button label="Resetear"  onPress={()=>resetPassword()}/>
+          <Dialog.Button label="Cancelar" onPress={()=>setVisible(false)}/>
+          </Dialog.Container>                                               
+        </View>
             <Header>
                 <TextHeader>¡Bienvenido, Christopher! :)</TextHeader>
             </Header>
@@ -231,9 +221,14 @@ useEffect(() => {
                 }
                     </TouchableOpacity>
                 </Action>
-                <ForgotText>¿Olvidaste tu contraseña?</ForgotText>
-                <View style={styles.button}>
+                
+                <TouchableOpacity onPress={()=>setVisible(true)}>
+                    <View>
+                        <ForgotText>¿Olvidaste tu contraseña?</ForgotText>
+                    </View>
+                </TouchableOpacity>
 
+                <View style={styles.button}>
                     <TouchableOpacity
                                 onPress= {signIn}
                                 style = {[styles.login, {

@@ -5,13 +5,15 @@ import firebase from "../firebase/config"
 import LottieView from 'lottie-react-native'
 import { Dimensions } from 'react-native';
 import colores from '../utility/colors/colores'
-import {MaterialIcons} from 'react-native-vector-icons'
+import {MaterialCommunityIcons} from 'react-native-vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {setIdPareja, getIdPareja, setCoupleObject, setUserCod, setDateData} from '../../data_store'
 import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
-import { keyboardVerticalOffset, setUniqueValue } from '../utility/constants'
+import { keyboardVerticalOffset } from '../utility/constants'
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import Dialog from "react-native-dialog";
+
 
 const Container = styled.View`
     flex: 1;
@@ -110,6 +112,8 @@ Notifications.setNotificationHandler({
     }),
   });
 
+
+
 const HomeScreen=({navigation})=> {
 
 let arrayParejas = [];
@@ -120,6 +124,8 @@ const [loading, setLoading] = useState(true);
 const [searching, setSearching] = useState(false);
 const [user, setUser] = useState(firebase.auth().currentUser.displayName);
 const [search, setSearch] = useState('');
+const [idUser2, setIdUser2] = useState(null);
+const [dialog2, setDialog2] = useState(false);
 const [date, setDate] = useState(new Date(1598051730000));
 const [mode, setMode] = useState('date');
 const [show, setShow] = useState(false);
@@ -128,8 +134,11 @@ const [statusSearch, setStatusSearch] = useState(null);
 const [banderita, setBanderita] = useState(false);
 const [expoPushToken, setExpoPushToken] = useState('');
 const [notification, setNotification] = useState(false);
+const [tokenPareja, setTokenPareja]= useState(null);
+const [aisu, setAisu] = useState('Te extraño :c');
 const notificationListener = useRef();
 const responseListener = useRef();
+const [aisuN, setAisuN] = useState(null);
 
 
 useEffect(()=>{
@@ -144,7 +153,7 @@ useEffect(()=>{
           setExpoPushToken(token)
           const usRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
             usRef.update({
-                "expo-token" : expoPushToken
+                "expoToken" : token
             })
             .then(()=>{
                 console.log("Token registrado exitosamente");
@@ -175,9 +184,9 @@ async function sendPushNotification(expoPushToken) {
     const message = {
       to: expoPushToken,
       sound: 'default',
-      title: 'Recibiste un Aisu',
-      body: 'Te extraño :c',
-      data: { someData: 'goes here' },
+      title: 'Recibiste un Aisu de '+user,
+      body: aisu,
+      data: { someData: '' },
     };
   
     await fetch('https://exp.host/--/api/v2/push/send', {
@@ -189,6 +198,12 @@ async function sendPushNotification(expoPushToken) {
       },
       body: JSON.stringify(message),
     });
+
+    const usRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
+    usRef.update({
+        "aisus" : parseInt(aisuN + 1)
+    })
+
   }
   
   async function registerForPushNotificationsAsync() {
@@ -201,13 +216,13 @@ async function sendPushNotification(expoPushToken) {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') {
-        alert('Failed to get push token for push notification!');
+        alert('Ocurrió un error al tratar de registrar tu registro');
         return;
       }
       token = (await Notifications.getExpoPushTokenAsync()).data;
       console.log(token);
     } else {
-      alert('Must use physical device for Push Notifications');
+      alert('No puedes usar un emulador para las notificaciones');
     }
   
     if (Platform.OS === 'android') {
@@ -223,6 +238,18 @@ async function sendPushNotification(expoPushToken) {
   }
 
 
+const getTokenPareja = () => {
+    firebase.firestore().collection('users').where('id','==',idUser2).onSnapshot((querySnapShot) => {
+        querySnapShot.forEach(doc => {
+         setTokenPareja(doc.data().expoToken);
+        })
+    })
+
+    const aux = async()=>{ await sendPushNotification(tokenPareja);}
+  
+    setTimeout(aux,1000);
+
+}
 
 
 const getStatusUser = () =>{
@@ -233,6 +260,7 @@ const getStatusUser = () =>{
           //  console.log(doc.data());
             status = doc.data().status;
             setStatus(doc.data().status);
+            setAisuN(doc.data().aisus);
         })
     })
 }
@@ -269,7 +297,8 @@ const qryA = async(id) =>{
          //   setCoupleObject(doc.data());
             setIdPareja(doc.data()._id);
             setUserCod(doc.data().iduser2);
-            setDateData(doc.data().date.seconds);
+            setIdUser2(doc.data().iduser2);
+            setDateData(doc.data().date.seconds); 
         })
     }
     )
@@ -283,6 +312,7 @@ const qryB = async(id)=>{
          //   setCoupleObject(doc.data());
             setIdPareja(doc.data()._id);
             setUserCod(doc.data().iduser1);
+            setIdUser2(doc.data().iduser1);
             setDateData(doc.data().date.seconds);
         })
     }
@@ -399,13 +429,6 @@ if(searchObject){
 }
 
 const createChatRoom = (_id) =>{
-  /*  await firebase.firestore().collection("chats").add({
-        chatId: _id
-    }).then(()=>{
-        console.log("Sala de chat con id "+_id.toString()+" creada correctamente");
-    }).catch((error)=>{
-        console.log(error);
-    }) */
     var chatRef = firebase.firestore().collection("chats").doc(_id).collection("mensajes").doc()
     
     chatRef.set({
@@ -417,14 +440,6 @@ const createChatRoom = (_id) =>{
     })
 }
 
-
-const signOut = () => {
-    firebase.auth().signOut().then(()=>{
-        navigation.replace('Login');
-    }).catch((error)=>{
-
-    });
-}
 
     return (
         <KeyboardAvoidingView 
@@ -457,12 +472,25 @@ const signOut = () => {
                                         <TextDiv>
                                             <TextName>¡Hola, {user}! </TextName>
                                             <GreetName>¿Cómo ha estado tu día hoy?</GreetName>
+                                            <View style={{alignItems: 'flex-end'}}>
+                                                <TouchableOpacity style={{marginHorizontal: 10, width: 45, height: 45, borderRadius: 45, backgroundColor: colores.darkviolet, alignItems:'center', justifyContent: 'center'}} onPress={()=>setDialog2(true)}>
+                                                <MaterialCommunityIcons name = "message-cog" size = {30} color = "white" />
+                                                </TouchableOpacity>
+                                            </View>
+                                            <View>
+                                                <Dialog.Container visible={dialog2}>
+                                                <Dialog.Title>Editar Aisu</Dialog.Title>
+                                                <Dialog.Input label="Mensaje" placeholder="Ingrese título" value={aisu} onChangeText={(text)=>{setAisu(text)}}/>
+                                                <Dialog.Button label="Actualizar" onPress={()=>setAisu("Te extraño :c")}/>
+                                                <Dialog.Button label="Cancelar"  onPress={()=>setDialog2(false)}/>
+                                                </Dialog.Container>
+                                            </View>
                                         </TextDiv>
                                         </TextView>
                                     <CircleView>
 
                                         <View style={styles.bigCircle}>
-                                            <TouchableOpacity onPress={async () => {await sendPushNotification(expoPushToken);}}>
+                                            <TouchableOpacity onPress={getTokenPareja}>
                                         <View style={styles.smallCircle}>
                                            <Image
                                            source= {require('../../assets/6.png')}
@@ -587,107 +615,6 @@ const signOut = () => {
         </KeyboardAvoidingView>
     )
 }
-
-
-/* 
-<Image 
-                                                                source = {require('../../assets/4.png')}
-                                                                width = {30}
-                                                                height = {30}
-                                                                style = {{alignItems: 'center', justifyContent: 'center'}}
-                                                                resizeMode = {"center"}
-                                                            />
-
-
-<View style={styles.cardView}>
-                                      <View style={{flex: 1}}>
-                                          <SupView>
-                                      <TextoInferior>Agrega a tu pareja</TextoInferior>
-                                         </SupView>
-                                         <MiddleView>
-                                         <Text>Email</Text>
-                                             <Action>
-                                             <InputEmail
-                                             placeholder = "Escribe el correo de tu pareja"
-                                             value = {search}
-                                             onChangeText = {(search) => setSearch(search)}
-                                             />
-                                             <View style={{alignItems: 'center'}}>
-                                              <TouchableOpacity
-                                                      onPress = {searchPareja}
-                                                   // onPress = {signOut}
-                                                        style = { {
-                                                            borderColor: colores.lightpurple,  
-                                                            borderWidth: 1,
-                                                         //   marginTop: 15,
-                                                            backgroundColor: colores.lightpurple,
-                                                           // borderRadius: ""
-                                                           width: 30,
-                                                           height: 30,
-                                                           borderRadius: 15
-                                                        }}>
-                                                            <MaterialIcons
-                                                            name = "person-search"
-                                                            size = {22}
-                                                            />
-                                            </TouchableOpacity>
-                                            </View>
-                                             </Action>
-                                        <View>
-                                            {!banderita?
-                                            <Text>La persona está <Text>Aqui</Text></Text>
-                                            :
-                                            <View style={{padding: 15}}>  
-                                                <Text>Email: {search}</Text>
-                                                <Text>Nombre : {userSearch}</Text>
-                                                {!statusSearch?
-                                                <>
-                                                <Text>La persona está <Text style={{color: "green"}}>disponible</Text></Text>
-                                                </>:
-                                                <>
-                                                <Text>La persona está <Text style={{color: "red"}}>en una relación ya</Text></Text>
-                                                </>
-                                                }
-                                                <Text>Fecha de inicio de relación: </Text>
-                                                <TouchableOpacity style={{backgroundColor: "#fff"}} onPress={()=>{setShow(true)}}>
-                                                <Text style={{color: "blue", textDecorationLine: 'underline'}}>Definir fecha</Text>
-                                                </TouchableOpacity>
-                                                {
-                                                    show?
-                                                    <DateTimePicker
-                                                    testID="dateTimePicker"
-                                                    value={date}
-                                                    mode={mode}
-                                                    is24Hour={true}
-                                                    display="default"
-                                                    onChange={onChange}
-                                                    />:
-                                                    null
-                                                }
-                                                <Text>Iniciaron el: {date.getDate()}/{date.getMonth()+1}/{date.getFullYear()}</Text>
-                                            </View>
-                                            
-                                            }
-                                        </View>
-                                        
-                                         </MiddleView>
-                                         <BottomView >
-                                         <View style={styles.button}>
-                                            <TouchableOpacity
-                                                        onPress = {createParejas}
-                                                        style = {[styles.login, {
-                                                            borderColor: colores.lightpurple,  
-                                                            borderWidth: 1,
-                                                            marginTop: 15
-                                                        }]}>
-                                                            <SignUpText>Registrar pareja</SignUpText>
-
-                                            </TouchableOpacity>
-                                    </View>
-                                    </BottomView>
-                                      </View>  
-                                  </View> */
-
 
 export default HomeScreen;
 

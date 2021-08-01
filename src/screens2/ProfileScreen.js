@@ -14,6 +14,7 @@ import { DynamicCollage, StaticCollage } from "react-native-images-collage";
 import ViewShot from '@zt-mobile/react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 
+
 const Container = styled.View`
     flex: 1;
 `
@@ -270,7 +271,6 @@ const pickImage = async() =>{
         photoURL : link3
       })
       .then(()=>{
-  
         console.log("Foto actualizado")
       })
       .catch(()=>{

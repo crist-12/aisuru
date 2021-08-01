@@ -191,39 +191,6 @@ const addEvento = ()=>{
                </View>
            </View>
            <View style={styles.body}>
-
-            <View style={styles.supBody}>
-                <View style={{flexDirection:'row'}}>
-                    <MaterialCommunityIcons
-                    name = "heart-multiple"
-                    size = {18}
-                    color = {colores.darkviolet}
-                    /> 
-                <Text style={{marginLeft: 10}}>
-                    Nuestro Aniversario: {aniversario}
-                </Text>
-                </View>
-                <View style={{flexDirection:'row'}}>
-                <MaterialCommunityIcons
-                name = "cake"
-                size = {18}
-                color = {colores.darkviolet}
-                /> 
-                 <Text style={{marginLeft: 10}}>
-                    Mi cumpleaños
-                </Text>
-                </View>
-                <View style={{flexDirection:'row'}}>
-                <MaterialCommunityIcons
-                name = "cake"
-                size = {18}
-                color = {colores.darkviolet}
-                /> 
-                 <Text style={{marginLeft: 10}}>
-                    Cumpleaños de
-                </Text>
-                </View>
-                </View>
                 <View style={{flex: 4}}>
                 <View style={{flex:2,  flexDirection: 'row'}}>
                     <View style={styles.cakeCard}>

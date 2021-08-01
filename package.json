@@ -5,7 +5,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "eject": "expo eject"
+    "eject": "expo eject",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.13.0",
@@ -17,11 +18,17 @@
     "@react-navigation/native": "^5.9.4",
     "@react-navigation/stack": "^5.14.5",
     "@zt-mobile/react-native-view-shot": "^3.1.5",
+    "email-validator": "^2.0.4",
+    "esdoc": "^1.1.0",
+    "esdoc-standard-plugin": "^1.0.0",
     "expo": "~41.0.1",
     "expo-image-picker": "~10.1.4",
     "expo-linear-gradient": "~9.1.0",
+    "expo-notifications": "~0.11.6",
     "expo-permissions": "~12.0.1",
+    "expo-print": "~10.1.0",
     "expo-sensors": "~10.1.2",
+    "expo-sharing": "~9.1.2",
     "expo-status-bar": "~1.0.4",
     "firebase": "^8.2.3",
     "lottie-react-native": "^4.0.2",
@@ -50,9 +57,7 @@
     "react-native-vector-icons": "^8.1.0",
     "react-native-web": "~0.13.12",
     "styled-components": "^5.3.0",
-    "unimodules-permissions-interface": "^6.1.0",
-    "expo-sharing": "~9.1.2",
-    "expo-notifications": "~0.11.6"
+    "unimodules-permissions-interface": "^6.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0"

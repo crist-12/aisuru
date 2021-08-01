@@ -23,6 +23,7 @@ const SignUpRequest = (name, email, password) => {
         id: uid,
         email,
         name,
+        aisus: 0,
         status: false,
       };
 
