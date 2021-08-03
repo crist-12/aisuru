@@ -25,6 +25,8 @@ const [visible1, setVisible1] = useState(false); // Dialog de cambio de contrase
 const [visible2, setVisible2] = useState(false); // Dialog de cambio de email
 const [visible3, setVisible3] = useState(false); // Dialog de cambio de nombre
 const [newPassword1, setNewPassword1] = useState("");
+const [image, setImage] = useState("");
+const [link, setLink] = useState("");
 const [newPassword2, setNewPassword2] = useState("");
 const [newDisplayName, setNewDisplayName] = useState("");
 const [newEmail, setNewEmail] = useState("");
@@ -183,12 +185,16 @@ const example = async(uri, imageName) => {
 /* Inicio de la función de cambio de nombre */
 
 const changeDisplayName =  async() => {
+  if(newDisplayName.length > 0){
   try{
     await firebase.auth().currentUser.updateProfile({displayName: newDisplayName});
     Alert.alert("Tu nombre se actualizó a "+newDisplayName);
   }catch(error){
     Alert.alert("Error al cambiar el nombre "+ error.message);
   }
+}else{
+  Alert.alert("Tu nombre no puede ir vacío");
+}
   setVisible3(false);
 }
 

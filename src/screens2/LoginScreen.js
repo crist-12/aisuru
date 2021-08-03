@@ -85,8 +85,7 @@ const signIn = () => {
         .then((res)=>{
             setAsyncStorage(keys.uuid, res.user.uid);
             setUniqueValue(res.user.uid);
-           // navigation.replace("Home");
-           navigation.replace("myTabs",{screen: "Home"});
+            navigation.replace("myTabs",{screen: "Home"});
         })
         .catch((error)=>{
             var errorCode = error.code;
@@ -159,7 +158,7 @@ useEffect(() => {
           </Dialog.Container>                                               
         </View>
             <Header>
-                <TextHeader>¡Bienvenido, Christopher! :)</TextHeader>
+                <TextHeader>¡Bienvenido! :)</TextHeader>
             </Header>
             <AwesomeAlert
                 show={error}

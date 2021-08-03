@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StatusBar, Dimensions, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import styled from 'styled-components';
 import * as Animatable from 'react-native-animatable';
-//import  LinearGradient  from 'react-native-linear-gradient';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';

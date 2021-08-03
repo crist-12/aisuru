@@ -36,6 +36,7 @@ const SignUpRequest = (name, email, password) => {
       })
      })
   } catch (error) {
+    alert(error.message);
     return error;
   }
 };

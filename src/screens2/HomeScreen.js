@@ -288,7 +288,6 @@ const onChange = (event, selectedDate) => {
   };
 
 
-
 const qryA = async(id) =>{
   firebase.firestore().collection('parejas').where('iduser1','==',id).onSnapshot((querySnapShot) => {
         querySnapShot.forEach(doc => {
@@ -426,6 +425,12 @@ if(searchObject){
     createChatRoom(data._id);
     setIdPareja(data._id);
 }
+
+navigation.reset({
+    index: 0,
+    routes: [{name: 'Home'}]
+})
+
 }
 
 const createChatRoom = (_id) =>{
@@ -470,7 +475,7 @@ const createChatRoom = (_id) =>{
                                 <TrueView>
                                     <TextView>
                                         <TextDiv>
-                                            <TextName>¡Hola, {user}! </TextName>
+                                            <TextName>¡Hola, {firebase.auth().currentUser.displayName}! </TextName>
                                             <GreetName>¿Cómo ha estado tu día hoy?</GreetName>
                                             <View style={{alignItems: 'flex-end'}}>
                                                 <TouchableOpacity style={{marginHorizontal: 10, width: 45, height: 45, borderRadius: 45, backgroundColor: colores.darkviolet, alignItems:'center', justifyContent: 'center'}} onPress={()=>setDialog2(true)}>
@@ -481,14 +486,13 @@ const createChatRoom = (_id) =>{
                                                 <Dialog.Container visible={dialog2}>
                                                 <Dialog.Title>Editar Aisu</Dialog.Title>
                                                 <Dialog.Input label="Mensaje" placeholder="Ingrese título" value={aisu} onChangeText={(text)=>{setAisu(text)}}/>
-                                                <Dialog.Button label="Actualizar" onPress={()=>setAisu("Te extraño :c")}/>
-                                                <Dialog.Button label="Cancelar"  onPress={()=>setDialog2(false)}/>
+                                                <Dialog.Button label="Actualizar" onPress={()=>setDialog2(false)}/>
+                                                <Dialog.Button label="Cancelar"  onPress={()=>{setAisu(aisu); setDialog2(false)}}/>
                                                 </Dialog.Container>
                                             </View>
                                         </TextDiv>
                                         </TextView>
                                     <CircleView>
-
                                         <View style={styles.bigCircle}>
                                             <TouchableOpacity onPress={getTokenPareja}>
                                         <View style={styles.smallCircle}>
@@ -522,7 +526,6 @@ const createChatRoom = (_id) =>{
                                             
                                                 <View style={{flex: 1, marginBottom: 15}}>
                                                 <TextoInferior>¡Bienvenido a Aisuru!</TextoInferior>
-                                                <TouchableOpacity onPress={async () => {await sendPushNotification(expoPushToken);}}><Text>SignOut</Text></TouchableOpacity>
                                                 <Text style={{marginTop: 15}}>Aisuru es más divertido con tu pareja</Text>
                                                 <Text style={{marginTop: 10, color: 'gray'}}>¡Comencemos esta aventura!</Text>
                                                 </View>

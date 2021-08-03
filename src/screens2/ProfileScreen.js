@@ -91,10 +91,6 @@ const captureViewShot = async() => {
 }
 
 
-let openShareDialogAsync = async () => {
-
-}; 
-
 const getRandomAlbum = () => {
 
   console.log("Hola");
@@ -131,6 +127,7 @@ const getAlbumPhotos = async() => {
   }
   )
   aux.length = 0;
+  
 }
 
 
